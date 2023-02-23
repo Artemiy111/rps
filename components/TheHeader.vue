@@ -9,13 +9,17 @@
         <button>Ru</button><span class="text-slate-500"> | </span
         ><button class="text-slate-500 hover:text-slate-600 active:text-slate-700">En</button>
       </div>
-      <div class="flex gap-5">
-        <VButton size="sm" type="primary">Вход</VButton><VButton size="sm">Регистрация</VButton>
+      <div v-if="!(isLoginPage || isRegistrationPage)" class="flex gap-5">
+        <VButton to="login" size="sm" type="primary">Вход</VButton
+        ><VButton to="registration" size="sm">Регистрация</VButton>
       </div>
     </div>
   </header>
 </template>
 <script setup lang="ts">
 import VButton from '~/components/ui/VButton.vue'
+const route = useRoute()
+
+const isLoginPage = computed(() => route.name === 'login')
+const isRegistrationPage = computed(() => route.name === 'registration')
 </script>
-<style scoped></style>

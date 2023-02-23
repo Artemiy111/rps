@@ -14,4 +14,6 @@
   </section>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import PastMatchesMatch from './PastMatchesMatch.vue'
+</script>

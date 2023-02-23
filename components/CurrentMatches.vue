@@ -9,6 +9,8 @@
   </section>
 </template>
 
-<script setup lang="ts"></script>
-
+<script setup lang="ts">
+import CurrentMatchesMatchCreate from './CurrentMatchesMatchCreate.vue'
+import CurrentMatchesMatch from './CurrentMatchesMatch.vue'
+</script>
 <style scoped></style>

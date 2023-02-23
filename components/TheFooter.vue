@@ -7,11 +7,11 @@
         <li>Юкин Дмитрий</li>
       </ul>
     </div>
-    <VLink href="/">Проект на Github</VLink>
+    <VLink to="/">Проект на Github</VLink>
     <span
       >Изображение от
       <VLink
-        href="https://ru.freepik.com/free-photo/businessman-doing-ok-gesture_1356591.htm#page=3&query=rock%20scissors%20paper&position=6&from_view=search&track=ais"
+        to="https://ru.freepik.com/free-photo/businessman-doing-ok-gesture_1356591.htm#page=3&query=rock%20scissors%20paper&position=6&from_view=search&track=ais"
         >Freepic</VLink
       ></span
     >
