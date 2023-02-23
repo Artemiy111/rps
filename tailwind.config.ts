@@ -1,8 +1,8 @@
-/** @type {import('tailwindcss').Config} */
 import type { Config } from 'tailwindcss'
 
 export default <Partial<Config>>{
   darkMode: 'class',
+
   theme: {
     screens: {
       xs: { max: '400px' },
@@ -12,8 +12,13 @@ export default <Partial<Config>>{
     },
     container: {
       screens: {
-        DEFAULT: '100%',
+        DEFAULT: '1200px',
       },
+    },
+    fontSize: {
+      sm: ['16px', { lineHeight: '18px' }],
+      base: [`20px`, { lineHeight: '23px' }],
+      md: ['24px', { lineHeight: '28px' }],
     },
   },
 }

@@ -1,9 +1,7 @@
 <template>
-  <div>
-    <header class="h-4 bg-blue-50"></header>
+  <div class="">
+    <TheBanner class="mb-16" />
+    <CurrentMatches class="mb-16" />
+    <PastMatches />
   </div>
 </template>
-
-<script setup lang="ts"></script>
-
-<style scoped></style>
