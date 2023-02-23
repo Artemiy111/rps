@@ -48,6 +48,7 @@ const props = withDefaults(
     type: 'secondary',
     size: 'sm',
     disabled: false,
+    to: undefined,
   }
 )
 </script>
