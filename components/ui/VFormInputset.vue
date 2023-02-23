@@ -1,7 +1,7 @@
 <template>
   <div class="relative">
-    <label :for="name" class="mb-3 block">Имя пользователя</label>
-    <VInput :id="name" type="text" class="w-full" />
+    <label :for="inputId" class="mb-3 block">{{ props.labelText }}</label>
+    <VInput :id="inputId" type="text" class="w-full" />
     <div
       v-if="props.validationErrorMessage"
       class="absolute bottom-[calc(-16px-10px)] text-sm text-red-500"
@@ -15,7 +15,8 @@
 import VInput from '~/components/ui/VInput.vue'
 
 const props = defineProps<{
-  name: string
+  inputId: string
+  labelText: string
   validationErrorMessage?: string
 }>()
 </script>
