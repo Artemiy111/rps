@@ -1,7 +1,7 @@
 <template>
   <div class="">
     <section class="mx-auto w-[600px] rounded-lg border-2 border-slate-500 p-8">
-      <h1 class="mb-8 font-bold">{{ t('login') }}</h1>
+      <h1 class="mb-8 font-bold">{{ t('signUp') }}</h1>
       <form class="mb-12 flex flex-col gap-12" @submit.prevent>
         <VFormInputset
           input-id="username"
@@ -11,16 +11,21 @@
         <VFormInputset
           input-id="password"
           input-type="password"
-          :maxlength="30"
           :label-text="t('password')"
           validation-error-message="Пароль должен быть не короче 8 символов"
+        />
+        <VFormInputset
+          input-id="repeat-password"
+          input-type="password"
+          :label-text="t('repeatPassword')"
+          validation-error-message="Пароли не совпадают"
         />
 
         <VButton disabled size="md">{{ t('continue') }}</VButton>
       </form>
       <div class="flex items-center gap-5">
-        <span>{{ t('noAccount') }}</span>
-        <VButton :to="localePath('signup')">{{ t('signUp') }}</VButton>
+        <span>{{ t('haveAccount') }}</span>
+        <VButton :to="localePath('login')">{{ t('login') }}</VButton>
       </div>
     </section>
   </div>
@@ -37,20 +42,22 @@ const localePath = useLocalePath()
 <i18n lang="json">
 {
   "ru": {
-    "login": "Вход",
+    "signUp": "Регистрация",
     "username": "Имя пользователя",
     "password": "Пароль",
+    "repeatPassword": "Повторите пароль",
     "continue": "Продолжить",
-    "noAccount": "Нет Аккаунта?",
-    "signUp": "Зарегистрироваться"
+    "haveAccount": "Есть Аккаунт?",
+    "login": "Вход"
   },
   "en": {
-    "login": "Login",
+    "signUp": "Sign up",
     "username": "Username",
     "password": "Password",
+    "repeatPassword": "Repeat password",
     "continue": "Continue",
-    "noAccount": "Haven't account?",
-    "signUp": "Sign up"
+    "haveAccount": "Have account?",
+    "login": "Login"
   }
 }
 </i18n>

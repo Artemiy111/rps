@@ -1,6 +1,6 @@
 <template>
   <section>
-    <h2 class="mb-8 font-bold">Прошедшие матчи</h2>
+    <h2 class="mb-8 font-bold">{{ t('lastMatches') }}</h2>
     <div class="grid grid-cols-4 gap-x-5 gap-y-8">
       <PastMatchesMatch
         v-for="i in 6"
@@ -16,4 +16,16 @@
 
 <script setup lang="ts">
 import PastMatchesMatch from './PastMatchesMatch.vue'
+const { t } = useI18n()
 </script>
+
+<i18n lang="json">
+{
+  "ru": {
+    "lastMatches": "Прошедшие матчи"
+  },
+  "en": {
+    "lastMatches": "Last matches"
+  }
+}
+</i18n>

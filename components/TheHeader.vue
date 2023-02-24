@@ -1,25 +1,66 @@
 <template>
   <header class="flex items-center justify-between py-8">
-    <NuxtLink :to="'/'" class="outline-none focus-visible:opacity-50">
-      <span class="text-md font-medium">Камень. Ножницы? Бумага!</span></NuxtLink
+    <NuxtLink :to="localePath('/')" class="outline-none focus-visible:opacity-50">
+      <span class="text-md font-medium">{{ t('logo') }}</span></NuxtLink
     >
     <div class="flex items-center gap-10">
-      <div class="flex gap-2.5"><span class="text-slate-500">В онлайне</span><span>12</span></div>
+      <div class="flex gap-2.5">
+        <span class="text-slate-500">{{ t('online') }}</span
+        ><span>12</span>
+      </div>
       <div class="flex gap-1">
-        <button>Ru</button><span class="text-slate-500"> | </span
-        ><button class="text-slate-500 hover:text-slate-600 active:text-slate-700">En</button>
+        <button
+          :class="
+            locale === 'ru'
+              ? 'text-black'
+              : 'text-slate-500 hover:text-slate-700 active:text-slate-800'
+          "
+          @click="setLocale('ru')"
+        >
+          Ru</button
+        ><span class="text-slate-400"> | </span
+        ><button
+          :class="
+            locale === 'en'
+              ? 'text-black'
+              : 'text-slate-500 hover:text-slate-700 active:text-slate-800'
+          "
+          @click="setLocale('en')"
+        >
+          En
+        </button>
       </div>
       <div v-if="!(isLoginPage || isRegistrationPage)" class="flex gap-5">
-        <VButton to="login" size="sm" type="primary">Вход</VButton
-        ><VButton to="registration" size="sm">Регистрация</VButton>
+        <VButton :to="localePath('login')" size="sm" type="primary">{{ t('login') }}</VButton
+        ><VButton :to="localePath('signup')" size="sm">{{ t('signup') }}</VButton>
       </div>
     </div>
   </header>
 </template>
+
 <script setup lang="ts">
 import VButton from '~/components/ui/VButton.vue'
-const route = useRoute()
+const { t, locale, setLocale } = useI18n()
+const localePath = useLocalePath()
 
-const isLoginPage = computed(() => route.name === 'login')
-const isRegistrationPage = computed(() => route.name === 'registration')
+const route = useRoute()
+const isLoginPage = computed(() => route.name?.toString().match('login'))
+const isRegistrationPage = computed(() => route.name?.toString().match('signup'))
 </script>
+
+<i18n lang="json">
+{
+  "ru": {
+    "logo": "Камень. Ножницы? Бумага!",
+    "online": "В онлайне",
+    "login": "Вход",
+    "signup": "Регистрация"
+  },
+  "en": {
+    "logo": "Rock. Paper? Scissors!",
+    "online": "Online",
+    "login": "Login",
+    "signup": "Sign Up"
+  }
+}
+</i18n>

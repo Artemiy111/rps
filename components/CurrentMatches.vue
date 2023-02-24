@@ -1,6 +1,6 @@
 <template>
   <section class="">
-    <h2 class="mb-8 font-bold">Текущие матчи</h2>
+    <h2 class="mb-8 font-bold">{{ t('currentMatches') }}</h2>
     <div class="grid grid-cols-4 gap-5">
       <CurrentMatchesMatchCreate />
       <CurrentMatchesMatch match-status="waiting" />
@@ -12,5 +12,17 @@
 <script setup lang="ts">
 import CurrentMatchesMatchCreate from './CurrentMatchesMatchCreate.vue'
 import CurrentMatchesMatch from './CurrentMatchesMatch.vue'
+
+const { t } = useI18n()
 </script>
-<style scoped></style>
+
+<i18n lang="json">
+{
+  "ru": {
+    "currentMatches": "Текущие матчи"
+  },
+  "en": {
+    "currentMatches": "Current matches"
+  }
+}
+</i18n>
