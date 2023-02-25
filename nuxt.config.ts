@@ -1,6 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   components: false,
+  runtimeConfig: {
+    jwtAccessSecret: 'jwt access token secret key placeholder',
+    jwtRefreshSecret: 'jwt refresh token secret key placeholder',
+  },
   modules: [
     '@pinia/nuxt',
     '@nuxtjs/i18n',

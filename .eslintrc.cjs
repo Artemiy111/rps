@@ -6,6 +6,6 @@ module.exports = {
   },
   extends: ['plugin:vue/vue3-recommended', 'plugin:nuxt/recommended', 'prettier'],
   rules: {
-    'vue/multi-word-component-names': 0,
+    'vue/multi-word-component-names': 'off',
   },
 }

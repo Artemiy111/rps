@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Card {
+  rock
+  paper
+  scissors
+}
+
+model User {
+  id       String @id @default(uuid()) @db.Uuid
+  name     String @unique
+  password String
+
+  matchesTherePlayer1 Match[] @relation("player1")
+  matchesTherePlayer2 Match[] @relation("player2")
+  Token               Token?
+
+  @@map("users")
+}
+
+model Match {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  startedAt DateTime? @map("started_at")
+  endedAt   DateTime? @map("ended_at")
+
+  player1Id    String @map("player1_id") @db.Uuid
+  player1Score Int    @default(0) @map("player1_score")
+  player1      User   @relation(name: "player1", fields: [player1Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  player2Id    String @map("player2_id") @db.Uuid
+  player2Score Int    @default(0) @map("player2_score")
+  player2      User   @relation(name: "player2", fields: [player2Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("matches")
+}
+
+model Token {
+  id      String @id @default(uuid()) @db.Uuid
+  refresh String @unique
+
+  userId String @unique @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("tokens")
+}
