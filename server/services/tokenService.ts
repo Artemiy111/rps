@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken'
 
-import { prisma, type Token } from '~/server/db'
+import { prisma } from '~/server/db'
 
-export type { Token } from '~/server/db'
+import type { Token } from '~/types'
 
 const config = useRuntimeConfig()
 
@@ -11,13 +11,14 @@ class TokenService {
     accessToken: string
     refreshToken: string
   } {
-    const accessToken = jwt.sign(payload, config.jwtAccessSecret, { expiresIn: 60 * 30 })
+    const accessToken = jwt.sign(payload, config.jwtAccessSecret, { expiresIn: 60 * 1 })
     const refreshToken = jwt.sign(payload, config.jwtRefreshSecret, { expiresIn: 60 * 60 * 30 })
     return {
       accessToken,
       refreshToken,
     }
   }
+
   async saveRefreshToken(userId: string, refreshToken: string): Promise<Token> {
     const token = await prisma.token.upsert({
       where: { userId },
@@ -38,6 +39,7 @@ class TokenService {
       return null
     }
   }
+
   verifyRefreshToken(refreshToken: string): { id: string } | null {
     try {
       const data = jwt.verify(refreshToken, config.jwtRefreshSecret) as { id: string }
@@ -52,18 +54,18 @@ class TokenService {
     return deletedToken
   }
 
-  async refreshRefreshToken(refreshToken: string): Promise<Token> {
-    const newRefreshToken = ''
-    const newToken = await prisma.token.update({
-      where: {
-        refresh: refreshToken,
-      },
-      data: {
-        refresh: newRefreshToken,
-      },
-    })
-    return newToken
-  }
+  // async refreshRefreshToken(refreshToken: string): Promise<Token> {
+  //   const newRefreshToken = ''
+  //   const newToken = await prisma.token.update({
+  //     where: {
+  //       refresh: refreshToken,
+  //     },
+  //     data: {
+  //       refresh: newRefreshToken,
+  //     },
+  //   })
+  //   return newToken
+  // }
 
   async findRefreshToken(refreshToken: string): Promise<Token | null> {
     const token = await prisma.token.findUnique({

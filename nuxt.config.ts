@@ -2,6 +2,8 @@
 export default defineNuxtConfig({
   components: false,
   runtimeConfig: {
+    clientUrl: '',
+    serverUrl: '',
     jwtAccessSecret: 'jwt access token secret key placeholder',
     jwtRefreshSecret: 'jwt refresh token secret key placeholder',
   },

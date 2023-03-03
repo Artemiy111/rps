@@ -1,15 +1,11 @@
+import type { User, UserSafeInfo, UserData, Token } from '~/types'
+
 import bcrypt from 'bcrypt'
 
-import { prisma, type User } from '~/server/db'
+import { prisma } from '~/server/db'
 
-import { tokenService, type Token } from '~/server/services/tokenService'
-
+import { tokenService } from '~/server/services/tokenService'
 import { ApiError } from '~/server/exceptions/ApiError'
-
-export type { Token } from '~/server/services/tokenService'
-
-export type UserSafeInfo = Omit<User, 'password'>
-export type UserData = { user: UserSafeInfo; accessToken: string; refreshToken: string }
 
 class UserService {
   getUserSafeInfo(user: User): UserSafeInfo {
@@ -56,7 +52,7 @@ class UserService {
       if (!user) throw ApiError.BadRequest('Username or password is invalid')
 
       const isExactPassword = await bcrypt.compare(data.password, user.password)
-      if (!isExactPassword) throw ApiError.BadRequest('Username or password is invalids')
+      if (!isExactPassword) throw ApiError.BadRequest('Username or password is invalid')
 
       const tokens = tokenService.createTokens({ id: user.id })
       tokenService.saveRefreshToken(user.id, tokens.refreshToken)
@@ -76,10 +72,11 @@ class UserService {
       const existingUser = await userService.findByName(data.username)
 
       if (existingUser)
-        throw ApiError.BadRequest(`User with name ${existingUser.name} is already exist`)
+        throw ApiError.BadRequest(`User with name ${existingUser.name} is already exists`)
 
       const user = await userService.create({ username: data.username, password: data.password })
       const tokens = tokenService.createTokens({ id: user.id })
+      tokenService.saveRefreshToken(user.id, tokens.refreshToken)
 
       return {
         user: userService.getUserSafeInfo(user),
@@ -107,6 +104,7 @@ class UserService {
     if (!userFromDb) throw ApiError.UnauthorizedError()
 
     const tokens = tokenService.createTokens({ id: userFromDb.id })
+    tokenService.saveRefreshToken(userFromDb.id, tokens.refreshToken)
 
     return {
       user: {

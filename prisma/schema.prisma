@@ -20,7 +20,7 @@ model User {
 
   matchesTherePlayer1 Match[] @relation("player1")
   matchesTherePlayer2 Match[] @relation("player2")
-  Token               Token?
+  token               Token?
 
   @@map("users")
 }
@@ -35,11 +35,11 @@ model Match {
 
   player1Id    String @map("player1_id") @db.Uuid
   player1Score Int    @default(0) @map("player1_score")
-  player1      User   @relation(name: "player1", fields: [player1Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  player1      User   @relation(name: "player1", fields: [player1Id], references: [id])
 
   player2Id    String @map("player2_id") @db.Uuid
   player2Score Int    @default(0) @map("player2_score")
-  player2      User   @relation(name: "player2", fields: [player2Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  player2      User   @relation(name: "player2", fields: [player2Id], references: [id])
 
   @@map("matches")
 }
@@ -49,7 +49,7 @@ model Token {
   refresh String @unique
 
   userId String @unique @map("user_id") @db.Uuid
-  user   User   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user   User   @relation(fields: [userId], references: [id])
 
   @@map("tokens")
 }

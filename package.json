@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@pinia/nuxt": "^0.4.7",
-    "@prisma/client": "^4.10.1",
+    "@prisma/client": "^4.11.0",
     "@vueuse/core": "^9.13.0",
     "bcrypt": "^5.1.0",
     "h3-zod": "^0.3.10",

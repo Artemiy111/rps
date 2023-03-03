@@ -40,9 +40,9 @@
 
 <script setup lang="ts">
 import VButton from '~/components/ui/VButton.vue'
+
 const { t, locale, setLocale } = useI18n()
 const localePath = useLocalePath()
-
 const route = useRoute()
 const isLoginPage = computed(() => route.name?.toString().match('login'))
 const isRegistrationPage = computed(() => route.name?.toString().match('signup'))
