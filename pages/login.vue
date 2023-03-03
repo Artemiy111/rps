@@ -2,7 +2,7 @@
   <div class="">
     <section class="mx-auto w-[600px] rounded-lg border-2 border-slate-500 p-8">
       <h1 class="mb-8 font-bold">{{ t('login') }}</h1>
-      <form class="mb-12 flex flex-col gap-12" @submit.prevent>
+      <form class="mb-12 flex flex-col gap-12">
         <VFormInputset
           v-model="form.username"
           input-id="username"
@@ -57,7 +57,6 @@ const errors = ref<{
 }>({})
 
 const additionalError = ref<string>()
-
 
 watch(
   form,

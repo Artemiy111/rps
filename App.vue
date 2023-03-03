@@ -11,8 +11,6 @@ import { api } from '~/http/api'
 const userStore = useUserStore()
 
 onMounted(async () => {
-  const accessToken = localStorage.getItem('access-token')
-  if (typeof accessToken === 'string') userStore.setAccessToken(accessToken)
-  api('/api/data').then(r => console.log(r))
+  await userStore.refresh()
 })
 </script>

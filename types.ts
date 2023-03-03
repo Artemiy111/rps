@@ -3,11 +3,8 @@ export type { User, Token }
 
 export type UserSafeInfo = Omit<User, 'password'>
 
-export type UserData = {
-  user: {
-    id: string
-    name: string
-  }
+export type UserApiData = {
+  user: UserSafeInfo
   accessToken: string
   refreshToken: string
 }

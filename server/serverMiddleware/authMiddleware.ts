@@ -1,4 +1,4 @@
-import { ApiError } from '~/server/exceptions/ApiError'
+import { ApiError } from '~~/server/errors/ApiError'
 import { tokenService } from '~/server/services/tokenService'
 
 export const authMiddleware = defineEventHandler(event => {
@@ -10,4 +10,5 @@ export const authMiddleware = defineEventHandler(event => {
 
   const userData = tokenService.verifyAccessToken(accessToken)
   if (!userData) throw ApiError.UnauthorizedError()
+  return userData
 })

@@ -6,7 +6,7 @@
       class="h-auto min-h-[300px] w-full object-cover"
     />
     <div class="absolute bottom-16 left-8 flex gap-5">
-      <VButton type="primary" size="md">{{ t('quickMatch') }}</VButton>
+      <VButton style-type="primary" size="md">{{ t('quickMatch') }}</VButton>
       <VButton size="md">{{ t('createMatch') }}</VButton>
     </div>
   </div>

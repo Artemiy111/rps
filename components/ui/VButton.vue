@@ -5,10 +5,10 @@
     :disabled="props.disabled"
     :class="[
       props.disabled ? 'bg-slate-50 text-slate-500' : '',
-      props.type === 'primary' && !props.disabled
+      props.styleType === 'primary' && !props.disabled
         ? 'bg-blue-500 text-blue-50 hover:bg-blue-600 focus:bg-blue-600 active:bg-blue-700'
         : '',
-      props.type === 'secondary' && !props.disabled
+      props.styleType === 'secondary' && !props.disabled
         ? 'bg-blue-50 text-blue-500 hover:bg-blue-100 focus:bg-blue-100 active:bg-blue-200'
         : '',
       props.size === 'sm' ? 'py-2 px-4' : '',
@@ -26,9 +26,9 @@
     :class="{
       'bg-slate-50 text-slate-500': props.disabled,
       'bg-blue-500 text-blue-50 hover:bg-blue-600 focus:bg-blue-600 active:bg-blue-700':
-        props.type === 'primary' && !props.disabled,
+        props.styleType === 'primary' && !props.disabled,
       'bg-blue-50 text-blue-500 hover:bg-blue-100 focus:bg-blue-100 active:bg-blue-200 ':
-        props.type === 'secondary' && !props.disabled,
+        props.styleType === 'secondary' && !props.disabled,
       'py-2 px-4': props.size === 'sm',
       'py-3 px-6': props.size === 'md',
     }"
@@ -49,13 +49,13 @@ export default {
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    type?: 'primary' | 'secondary'
+    styleType?: 'primary' | 'secondary'
     size?: 'sm' | 'md'
     disabled?: boolean
     to?: string
   }>(),
   {
-    type: 'secondary',
+    styleType: 'secondary',
     size: 'sm',
     disabled: false,
     to: undefined,

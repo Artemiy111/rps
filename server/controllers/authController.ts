@@ -1,21 +1,21 @@
-import type { UserData, Token } from '~/types'
+import type { UserApiData, Token } from '~/types'
 
 import { useValidatedBody } from 'h3-zod'
 
-import { ApiError } from '~/server/exceptions/ApiError'
+import { ApiError } from '~~/server/errors/ApiError'
 
 import { signupSchema, loginSchema } from '~/schema/authSchema'
 
-import { userService } from '~/server/services/userService'
+import { authService } from '~/server/services/authService'
 
 const ONE_MONTH_IN_MS = 1000 * 60 * 60 * 30
 
 class AuthController {
   signup() {
-    return defineEventHandler(async (event): Promise<UserData> => {
+    return defineEventHandler(async (event): Promise<UserApiData> => {
       const body = await useValidatedBody(event, signupSchema)
 
-      const userData = await userService.signup(body)
+      const userData = await authService.signup(body)
 
       setCookie(event, 'refreshToken', userData.refreshToken, {
         maxAge: ONE_MONTH_IN_MS,
@@ -27,10 +27,10 @@ class AuthController {
   }
 
   login() {
-    return defineEventHandler(async (event): Promise<UserData> => {
+    return defineEventHandler(async (event): Promise<UserApiData> => {
       const body = await useValidatedBody(event, loginSchema)
 
-      const userData = await userService.login(body)
+      const userData = await authService.login(body)
 
       setCookie(event, 'refreshToken', userData.refreshToken, {
         maxAge: ONE_MONTH_IN_MS,
@@ -42,11 +42,11 @@ class AuthController {
   }
 
   refresh() {
-    return defineEventHandler(async (event): Promise<UserData> => {
+    return defineEventHandler(async (event): Promise<UserApiData> => {
       const refreshToken = getCookie(event, 'refreshToken')
       if (refreshToken === undefined) throw ApiError.UnauthorizedError()
 
-      const userData = await userService.refresh(refreshToken)
+      const userData = await authService.refresh(refreshToken)
       setCookie(event, 'refreshToken', userData.refreshToken, {
         maxAge: ONE_MONTH_IN_MS,
         httpOnly: true,
@@ -60,7 +60,7 @@ class AuthController {
       const refreshToken = getCookie(event, 'refreshToken')
       if (refreshToken === undefined) throw ApiError.UnauthorizedError()
 
-      const deletedToken = await userService.logout(refreshToken)
+      const deletedToken = await authService.logout(refreshToken)
       deleteCookie(event, 'refreshToken')
       return deletedToken
     })

@@ -1,11 +1,11 @@
-import type { UserData, Token } from '~/types'
+import type { UserApiData, Token } from '~/types'
 
 class AuthApi {
   async signup(data: {
     username: string
     password: string
     repeatPassword: string
-  }): Promise<UserData> {
+  }): Promise<UserApiData> {
     const userData = await $fetch('/api/auth/signup', {
       method: 'POST',
       body: {
@@ -18,7 +18,7 @@ class AuthApi {
     return userData
   }
 
-  async login(data: { username: string; password: string }): Promise<UserData> {
+  async login(data: { username: string; password: string }): Promise<UserApiData> {
     return await $fetch('/api/auth/login', {
       method: 'POST',
       body: {
@@ -32,7 +32,7 @@ class AuthApi {
     return await $fetch('/api/auth/logout')
   }
 
-  async refresh(): Promise<UserData> {
+  async refresh(): Promise<UserApiData> {
     return await $fetch('/api/auth/refresh')
   }
 }

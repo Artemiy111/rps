@@ -18,3 +18,4 @@ export const api = ofetch.create({
     }
   },
 })
+//TODO сделать рабочий интерсептор
