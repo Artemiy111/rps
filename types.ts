@@ -12,8 +12,10 @@ export type UserApiData = {
 export type GameCard = 'rock' | 'paper' | 'scissors' | 'hand'
 
 export type GameMessage = {
-  gameId: string
-  userId: string
+  game: {
+    id: string
+  }
+  user: UserSafeInfo
   message: {
     card: GameCard
   }

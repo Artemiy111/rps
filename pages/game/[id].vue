@@ -3,7 +3,7 @@
     <div class="flex w-fit flex-col gap-8">
       <section class="flex w-fit min-w-[210px] flex-col gap-2">
         <h2 class="font-bold">{{ t('playing') }}</h2>
-        <span>Зелибобик / Чорт</span>
+        <span>{{ userStore.user?.name }} / {{ enemy?.name || '..' }}</span>
       </section>
       <section class="flex flex-col gap-2">
         <h3 class="font-bold">{{ t('score') }}</h3>
@@ -39,7 +39,7 @@
 import GameCard from '~/components/GameCard.vue'
 import GameStatus from '~/components/GameStatus.vue'
 
-import type { GameCard as Card, GameMessage } from '~/types'
+import type { GameCard as Card, GameMessage, UserSafeInfo } from '~/types'
 
 import { useUserStore } from '~/store/userStore'
 
@@ -59,19 +59,30 @@ const isSelected = (card: Card) => card === currentCard.value
 
 const socket = ref<WebSocket>()
 const currentCard = ref<Card>('hand')
+
+const enemy = ref<UserSafeInfo>()
 const enemyCard = ref<Card>('hand')
 
-// watchEffect(() => {
-//   if (!userStore.user) {
-//     router.push(localePath('/'))
-//   }
-// })
+watchEffect(() => {
+  if (!userStore.user) {
+    router.push(localePath('/'))
+  }
+})
+
+const selectCard = (card: Card) => {
+  if (card === currentCard.value) return
+  currentCard.value = card
+
+  sendMessage()
+}
 
 const sendMessage = () => {
   if (!userStore.user) return
   const message: GameMessage = {
-    gameId: gameId,
-    userId: userStore.user.id,
+    game: {
+      id: gameId,
+    },
+    user: userStore.user,
     message: {
       card: currentCard.value,
     },
@@ -85,7 +96,7 @@ const sendMessage = () => {
 const parseMessage = (event: MessageEvent<any>): GameMessage => {
   return JSON.parse(event.data) as GameMessage
 }
-//FIXME Баг при перезагрузке
+
 onMounted(() => {
   socket.value = new WebSocket('ws://localhost:4000/api/game')
 
@@ -99,7 +110,7 @@ onMounted(() => {
     const message = parseMessage(event)
     console.log(`[get]`, message)
 
-    if (message.userId === userStore.user.id) {
+    if (message.user.id === userStore.user.id) {
       currentCard.value = message.message.card
     } else {
       enemyCard.value = message.message.card
@@ -117,12 +128,6 @@ onMounted(() => {
     console.log(`[err], ${error}`)
   }
 })
-
-const selectCard = (card: Card) => {
-  currentCard.value = card
-
-  sendMessage()
-}
 </script>
 
 <i18n lang="json">

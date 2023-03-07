@@ -7,14 +7,18 @@
     />
     <div class="absolute bottom-16 left-8 flex gap-5">
       <VButton style-type="primary" size="md">{{ t('quickMatch') }}</VButton>
-      <VButton size="md">{{ t('createMatch') }}</VButton>
+      <VButton :to="localePath(`/game/${uuid()}`)" size="md">{{ t('createMatch') }}</VButton>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import VButton from './ui/VButton.vue'
+
+import { v4 as uuid } from 'uuid'
+
 const { t } = useI18n()
+const localePath = useLocalePath()
 </script>
 
 <i18n lang="json">

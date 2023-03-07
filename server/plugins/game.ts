@@ -52,23 +52,23 @@ const onSocketMessage = (ws: WebSocket, socketId: SocketId) => {
     const isInitialSocketMessage = message.message.card === 'hand'
 
     const newPlayer: Player = {
-      id: message.userId,
+      id: message.user.id,
       card: message.message.card,
       sockets: new Set([socketId]),
     }
 
-    const game = games.get(message.gameId)
+    const game = games.get(message.game.id)
     if (!game) {
       const newGameData: GameData = { players: [newPlayer] }
-      games.set(message.gameId, newGameData)
-    } else if (game.players.length === 1 && game.players[0].id !== message.userId) {
+      games.set(message.game.id, newGameData)
+    } else if (game.players.length === 1 && game.players[0].id !== message.user.id) {
       game.players.push(newPlayer)
     }
 
-    const gameExisting = games.get(message.gameId)!
+    const gameExisting = games.get(message.game.id)!
 
     for (const player of gameExisting.players) {
-      if (player.id === message.userId) {
+      if (player.id === message.user.id) {
         if (!isInitialSocketMessage) player.card = message.message.card
 
         if (!player.sockets.has(socketId)) player.sockets.add(socketId)
@@ -77,10 +77,12 @@ const onSocketMessage = (ws: WebSocket, socketId: SocketId) => {
 
     if (isInitialSocketMessage) {
       const sendInitialMessage = () => {
-        const playerExisting = gameExisting.players.find(player => player.id === message.userId)!
+        const playerExisting = gameExisting.players.find(player => player.id === message.user.id)!
         const initialResponseMessage: GameMessage = {
-          gameId: message.gameId,
-          userId: message.userId,
+          game: {
+            id: message.game.id,
+          },
+          user: message.user,
           message: {
             card: playerExisting.card,
           },
