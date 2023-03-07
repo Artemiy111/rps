@@ -5,10 +5,10 @@ export default <Partial<Config>>{
 
   theme: {
     screens: {
-      xs: { max: '400px' },
-      sm: { max: '640px' },
-      md: { max: '768px' },
       lg: { max: '1200px' },
+      md: { max: '768px' },
+      sm: { max: '640px' },
+      xs: { max: '400px' },
     },
     container: {
       screens: {

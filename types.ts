@@ -8,3 +8,13 @@ export type UserApiData = {
   accessToken: string
   refreshToken: string
 }
+
+export type GameCard = 'rock' | 'paper' | 'scissors' | 'hand'
+
+export type GameMessage = {
+  gameId: string
+  userId: string
+  message: {
+    card: GameCard
+  }
+}

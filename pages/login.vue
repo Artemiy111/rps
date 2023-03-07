@@ -1,8 +1,8 @@
 <template>
   <div class="">
-    <section class="mx-auto w-[600px] rounded-lg border-2 border-slate-500 p-8">
+    <section class="mx-auto w-[600px] rounded-lg border-2 border-slate-500 p-8 md:w-full">
       <h1 class="mb-8 font-bold">{{ t('login') }}</h1>
-      <form class="mb-12 flex flex-col gap-12">
+      <form class="mb-12 flex flex-col gap-12 sm:mb-10 sm:gap-10" @submit.prevent="">
         <VFormInputset
           v-model="form.username"
           input-id="username"
@@ -39,12 +39,12 @@ import { FetchError } from 'ofetch'
 import type { ZodError } from 'zod'
 
 import { loginSchema } from '~/schema/authSchema'
-import { useUserStore } from '~/store/userStore'
+import { useAuthStore } from '~~/store/authStore'
 
 const { t } = useI18n()
 const localePath = useLocalePath()
 const router = useRouter()
-const userStore = useUserStore()
+const userStore = useAuthStore()
 
 const form = ref({
   username: '',
@@ -85,7 +85,6 @@ watch(
 )
 
 const login = async () => {
-  console.log('login')
   try {
     loginSchema.parse({
       username: form.value.username,

@@ -18,14 +18,14 @@ model User {
   name     String @unique
   password String
 
-  matchesTherePlayer1 Match[] @relation("player1")
-  matchesTherePlayer2 Match[] @relation("player2")
+  matchesTherePlayer1 Game[] @relation("player1")
+  matchesTherePlayer2 Game[] @relation("player2")
   token               Token?
 
   @@map("users")
 }
 
-model Match {
+model Game {
   id        String   @id @default(uuid()) @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

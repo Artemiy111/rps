@@ -1,18 +1,18 @@
 <template>
   <div class="relative">
-    <label :for="props.inputId" class="pointer-events-none mb-3 block">{{ props.labelText }}</label>
+    <label :for="inputId" class="pointer-events-none mb-3 block">{{ labelText }}</label>
     <VInput
-      :id="props.inputId"
-      v-model="modelValue"
-      :type="props.inputType"
-      :maxlength="props.maxlength"
+      :id="inputId"
+      v-model="inputModelValue"
+      :type="inputType"
+      :maxlength="maxlength"
       class="w-full"
     />
     <div
-      v-if="props.validationErrorMessage"
+      v-if="validationErrorMessage"
       class="absolute bottom-[calc(-16px-10px)] text-sm text-red-500 transition-all duration-700"
     >
-      {{ props.validationErrorMessage }}
+      {{ validationErrorMessage }}
     </div>
   </div>
 </template>
@@ -40,7 +40,7 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
 }>()
 
-const modelValue = computed({
+const inputModelValue = computed({
   get() {
     return props.modelValue
   },

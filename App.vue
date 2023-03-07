@@ -5,12 +5,10 @@
 </template>
 
 <script setup lang="ts">
-import { useUserStore } from '~/store/userStore'
-import { api } from '~/http/api'
+import { useAuthStore } from '~/store/authStore'
+const authStore = useAuthStore()
 
-const userStore = useUserStore()
-
-onMounted(async () => {
-  await userStore.refresh()
-})
+try {
+  await authStore.refresh()
+} catch (e) {}
 </script>

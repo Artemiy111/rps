@@ -17,6 +17,7 @@ export default defineNuxtConfig({
   build: {
     transpile: ['@nuxtjs/google-fonts'],
   },
+  ssr: false,
   css: ['~/assets/style/index.css'],
   googleFonts: {
     download: true,
