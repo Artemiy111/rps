@@ -1,5 +1,5 @@
-import { ApiError } from '~~/server/errors/ApiError'
-import { tokenService } from '~/server/services/tokenService'
+import { ApiError } from '~/server/errors/ApiError'
+import { tokenService } from '~/server/services/token.service'
 
 export const authMiddleware = defineEventHandler(event => {
   const authorizationHeader = getHeader(event, 'Authorization')

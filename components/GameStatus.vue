@@ -14,13 +14,18 @@
 </template>
 
 <script setup lang="ts">
-type GameStatus = 'waiting' | 'timer' | 'lose' | 'draw' | 'win'
+import type { GameStatus } from '~/types'
+import { ruNumberPluralization } from '~/helpers/ruNumberPluralization'
 
 const props = defineProps<{
   gameStatus: GameStatus
 }>()
 
-const { t } = useI18n()
+const { t } = useI18n({
+  pluralRules: {
+    ru: ruNumberPluralization,
+  },
+})
 
 const timeLeftInSeconds = ref(0)
 
@@ -35,7 +40,7 @@ const statustext = computed(() => {
     case 'win':
       return t('win')
     case 'timer':
-      return timeLeftInSeconds.value + ' секунд'
+      return t('second', timeLeftInSeconds.value)
   }
 })
 
@@ -54,13 +59,15 @@ const setTimer = (timeInSeconds: number) => {
     "waiting": "Ждём присоединения игрока",
     "lose": "Вы проиграли",
     "draw": "Ничья",
-    "win": "Вы выиграли"
+    "win": "Вы выиграли",
+    "second": "{n} секунд | {n} секунда | {n} секунды"
   },
   "en": {
     "waiting": "Waiting for player to join",
     "lose": "You lost",
     "draw": "Draw",
-    "win": "You won"
+    "win": "You won",
+    "second": "0 seconds | 1 second | {n} seconds"
   }
 }
 </i18n>

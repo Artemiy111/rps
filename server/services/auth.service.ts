@@ -2,10 +2,10 @@ import type { UserApiData, Token } from '~/types'
 
 import bcrypt from 'bcrypt'
 
-import { userServise } from './userService'
-import { tokenService } from './tokenService'
+import { userServise } from './user.service'
+import { tokenService } from './token.service'
 
-import { ApiError } from '~~/server/errors/ApiError'
+import { ApiError } from '~/server/errors/ApiError'
 
 class AuthService {
   async login(data: { username: string; password: string }): Promise<UserApiData> {

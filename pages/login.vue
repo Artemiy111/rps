@@ -39,7 +39,7 @@ import { FetchError } from 'ofetch'
 import type { ZodError } from 'zod'
 
 import { loginSchema } from '~/schema/authSchema'
-import { useAuthStore } from '~~/store/authStore'
+import { useAuthStore } from '~/store/authStore'
 
 const { t } = useI18n()
 const localePath = useLocalePath()

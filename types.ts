@@ -15,8 +15,12 @@ export type GameMessage = {
   game: {
     id: string
   }
-  user: UserSafeInfo
+  sender: UserSafeInfo
+  disconnected: boolean
   message: {
     card: GameCard
   }
 }
+
+export type GameStatus = 'waiting' | 'timer' | 'lose' | 'draw' | 'win'
+export type GameRoundStatus = 'lose' | 'draw' | 'win'

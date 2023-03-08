@@ -24,8 +24,8 @@
       </section>
     </div>
     <div class="flex flex-col items-center gap-8">
-      <GameCard card-name="hand" :is-selectable="false" />
-      <GameStatus game-status="win" />
+      <GameCard card-name="hand" :is-selected="isEnemySelected" :is-selectable="false" />
+      <GameStatus :game-status="gameStatus" />
       <div class="flex gap-10">
         <GameCard card-name="rock" :is-selected="isSelected('rock')" @select="selectCard" />
         <GameCard card-name="scissors" :is-selected="isSelected('scissors')" @select="selectCard" />
@@ -39,12 +39,13 @@
 import GameCard from '~/components/GameCard.vue'
 import GameStatus from '~/components/GameStatus.vue'
 
-import type { GameCard as Card, GameMessage, UserSafeInfo } from '~/types'
+import type { GameCard as Card, GameMessage, GameStatus as Status, UserSafeInfo } from '~/types'
 
 import { useUserStore } from '~/store/userStore'
+import { getGameRoundStatus } from '~/helpers/getGameRoundStatus'
 
 definePageMeta({
-  middleware: 'auth-middleware',
+  middleware: 'auth',
 })
 
 const { t } = useI18n()
@@ -56,12 +57,15 @@ const router = useRouter()
 const gameId = route.params.id as string
 
 const isSelected = (card: Card) => card === currentCard.value
+const isEnemySelected = computed(() => enemyCard.value !== 'hand')
 
-const socket = ref<WebSocket>()
+const socket = ref<WebSocket | null>(null)
 const currentCard = ref<Card>('hand')
 
-const enemy = ref<UserSafeInfo>()
+const enemy = ref<UserSafeInfo | null>(null)
 const enemyCard = ref<Card>('hand')
+
+const gameStatus = ref<Status>('waiting')
 
 watchEffect(() => {
   if (!userStore.user) {
@@ -77,57 +81,82 @@ const selectCard = (card: Card) => {
 }
 
 const sendMessage = () => {
-  if (!userStore.user) return
+  if (!userStore.user || !socket.value) return
   const message: GameMessage = {
     game: {
       id: gameId,
     },
-    user: userStore.user,
+    sender: userStore.user,
+    disconnected: false,
     message: {
       card: currentCard.value,
     },
   }
 
-  if (!socket.value) return
   socket.value.send(JSON.stringify(message))
   console.log('[send]')
 }
 
-const parseMessage = (event: MessageEvent<any>): GameMessage => {
+const parseMessage = (event: MessageEvent): GameMessage => {
   return JSON.parse(event.data) as GameMessage
 }
 
 onMounted(() => {
   socket.value = new WebSocket('ws://localhost:4000/api/game')
-
-  socket.value.onopen = event => {
-    console.log('[opn]')
-    sendMessage()
-  }
-
-  socket.value.onmessage = event => {
-    if (!userStore.user) return
-    const message = parseMessage(event)
-    console.log(`[get]`, message)
-
-    if (message.user.id === userStore.user.id) {
-      currentCard.value = message.message.card
-    } else {
-      enemyCard.value = message.message.card
-    }
-  }
-
-  socket.value.onclose = event => {
-    if (event.wasClean) {
-    } else {
-      console.log('[cls]')
-    }
-  }
-
-  socket.value.onerror = error => {
-    console.log(`[err], ${error}`)
-  }
+  socket.value.onopen = onSocketOpen
+  socket.value.onmessage = onSocketMessage
+  socket.value.onclose = onSocketClose
+  socket.value.onerror = onSocketError
 })
+
+onBeforeUnmount(() => {
+  socket.value?.close()
+})
+
+const onSocketOpen = (event: Event) => {
+  console.log('[opn]')
+  sendMessage()
+}
+
+const onSocketMessage = (event: MessageEvent) => {
+  if (!userStore.user) return
+  const message = parseMessage(event)
+
+  if (message.disconnected) {
+    enemyCard.value = 'hand'
+    enemy.value = null
+    console.log(`[dis]`, message)
+    return
+  }
+
+  if (message.sender.id === userStore.user.id) {
+    console.log(`[get]`, message)
+    currentCard.value = message.message.card
+    if (enemy.value) gameStatus.value = getGameRoundStatus(currentCard.value, enemyCard.value)
+  }
+
+  if (message.sender.id !== userStore.user.id) {
+    console.log(`[enm]`, message)
+    if (!enemy.value) {
+      enemy.value = message.sender
+      gameStatus.value = 'timer'
+    }
+    enemyCard.value = message.message.card
+    gameStatus.value = getGameRoundStatus(currentCard.value, enemyCard.value)
+  }
+}
+
+const onSocketClose = (event: CloseEvent) => {
+  if (event.wasClean) {
+  } else {
+    console.log('[cls]')
+  }
+  socket.value = null
+}
+
+const onSocketError = (error: Event) => {
+  console.log(`[err], ${error}`)
+}
 </script>
 
 <i18n lang="json">

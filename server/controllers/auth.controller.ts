@@ -2,11 +2,11 @@ import type { UserApiData, Token } from '~/types'
 
 import { useValidatedBody } from 'h3-zod'
 
-import { ApiError } from '~~/server/errors/ApiError'
+import { ApiError } from '~/server/errors/ApiError'
 
 import { signupSchema, loginSchema } from '~/schema/authSchema'
 
-import { authService } from '~/server/services/authService'
+import { authService } from '~/server/services/auth.service'
 
 const ONE_MONTH_IN_MS = 1000 * 60 * 60 * 30
 

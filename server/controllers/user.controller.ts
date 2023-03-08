@@ -1,7 +1,7 @@
-import { authMiddleware } from '~/server/serverMiddleware/authMiddleware'
+import { authMiddleware } from '~/server/serverMiddleware/auth.middleware'
 
-import { userServise } from '~/server/services/userService'
-import { ApiError } from '~~/server/errors/ApiError'
+import { userServise } from '~/server/services/user.service'
+import { ApiError } from '~/server/errors/ApiError'
 
 class UserController {
   getUser() {

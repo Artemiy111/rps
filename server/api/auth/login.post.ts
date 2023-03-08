@@ -1,3 +1,3 @@
-import { authController } from '~/server/controllers/authController'
+import { authController } from '~/server/controllers/auth.controller'
 
 export default authController.login()
