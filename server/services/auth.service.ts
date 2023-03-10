@@ -51,10 +51,12 @@ class AuthService {
   }
 
   async logout(refreshToken: string): Promise<Token> {
-    const deletedToken = await tokenService.deleteRefreshToken(refreshToken)
+    const userData = tokenService.verifyRefreshToken(refreshToken)
+    if (!userData) throw ApiError.UnauthorizedError()
+
+    const deletedToken = await tokenService.deleteRefreshTokenByUserId(userData.id)
     return deletedToken
   }
-
   async refresh(refreshToken: string): Promise<UserApiData> {
     const verifiedUserData = tokenService.verifyRefreshToken(refreshToken)
     if (!verifiedUserData) throw ApiError.UnauthorizedError()

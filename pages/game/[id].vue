@@ -3,22 +3,27 @@
     <div class="flex w-fit flex-col gap-8">
       <section class="flex w-fit min-w-[210px] flex-col gap-2">
         <h2 class="font-bold">{{ t('playing') }}</h2>
-        <span>{{ userStore.user?.name }} / {{ enemy?.name || '..' }}</span>
+        <span>{{ player?.name }} / {{ enemy?.name || '..' }}</span>
       </section>
       <section class="flex flex-col gap-2">
         <h3 class="font-bold">{{ t('score') }}</h3>
         <div
           class="flex w-fit items-center justify-center rounded-lg bg-blue-50 px-10 py-3 text-blue-500"
         >
-          3 : 2
+          {{ playerScore }} : {{ enemyScore }}
         </div>
       </section>
-      <section class="flex w-fit flex-col gap-6">
-        <div v-for="i in 3" :key="i" class="flex flex-col gap-2">
-          <h4 class="font-bold">{{ t('raund') }} {{ i }}</h4>
+      <section class="custom-scroll flex max-h-[60dvh] w-fit flex-col gap-6 overflow-auto pr-2">
+        <div v-for="round in rounds" :key="round.order" class="flex flex-col gap-2">
+          <h4 class="font-bold">{{ t('round') }} {{ round.order }}</h4>
           <div class="flex w-fit items-center gap-1 rounded-lg bg-slate-50 py-2 px-4">
-            <span>{{ t('scissors') }}</span>
-            / <span>{{ t('rock') }}</span>
+            <span :class="round.playerCard === round.winnerCard ? 'text-blue-500' : ''">{{
+              t(round.playerCard)
+            }}</span>
+            /
+            <span :class="round.enemyCard === round.winnerCard ? 'text-blue-500' : ''">{{
+              t(round.enemyCard)
+            }}</span>
           </div>
         </div>
       </section>
@@ -39,7 +44,13 @@
 import GameCard from '~/components/GameCard.vue'
 import GameStatus from '~/components/GameStatus.vue'
 
-import type { GameCard as Card, GameMessage, GameStatus as Status, UserSafeInfo } from '~/types'
+import type {
+  GameCard as Card,
+  GameMessageFromApi,
+  GameMessageFromClient,
+  GameStatus as Status,
+  UserSafeInfo,
+} from '~/types'
 
 import { useUserStore } from '~/store/userStore'
 import { getGameRoundStatus } from '~/helpers/getGameRoundStatus'
@@ -55,6 +66,30 @@ const route = useRoute()
 const router = useRouter()
 
 const gameId = route.params.id as string
+const gameStatus = ref<Status>('waiting')
+
+type Round = {
+  order: number
+  playerCard: Card
+  enemyCard: Card
+  winnerCard?: Card
+  winnerId?: string
+}
+
+const rounds = ref<Round[]>([])
+
+const getScore = (player: Ref<UserSafeInfo | null>) => {
+  return computed(() => {
+    if (!player.value) return 0
+    return rounds.value.reduce(
+      (acc, round) => (round.winnerId === player.value!.id ? acc + 1 : acc),
+      0
+    )
+  })
+}
+
+const player = computed(() => userStore.user)
+const playerScore = getScore(player)
 
 const isSelected = (card: Card) => card === currentCard.value
 const isEnemySelected = computed(() => enemyCard.value !== 'hand')
@@ -64,14 +99,18 @@ const currentCard = ref<Card>('hand')
 
 const enemy = ref<UserSafeInfo | null>(null)
 const enemyCard = ref<Card>('hand')
-
-const gameStatus = ref<Status>('waiting')
+const enemyScore = getScore(enemy)
 
 watchEffect(() => {
-  if (!userStore.user) {
+  if (!player) {
     router.push(localePath('/'))
   }
 })
+
+// watchEffect(() => {
+//   if (currentCard.value === 'hand' && enemyCard.value === 'hand' && gameStatus.value !== 'waiting')
+//     gameStatus.value = 'timer'
+// })
 
 const selectCard = (card: Card) => {
   if (card === currentCard.value) return
@@ -81,13 +120,12 @@ const selectCard = (card: Card) => {
 }
 
 const sendMessage = () => {
-  if (!userStore.user || !socket.value) return
-  const message: GameMessage = {
+  if (!player.value || !socket.value) return
+  const message: GameMessageFromClient = {
     game: {
       id: gameId,
     },
-    sender: userStore.user,
-    disconnected: false,
+    sender: player.value,
     message: {
       card: currentCard.value,
     },
@@ -97,12 +135,12 @@ const sendMessage = () => {
   console.log('[send]')
 }
 
-const parseMessage = (event: MessageEvent): GameMessage => {
-  return JSON.parse(event.data) as GameMessage
+const parseMessage = (event: MessageEvent): GameMessageFromApi => {
+  return JSON.parse(event.data) as GameMessageFromApi
 }
 
 onMounted(() => {
-  socket.value = new WebSocket('ws://localhost:4000/api/game')
+  socket.value = new WebSocket('ws://localhost:4000/api/game/ws')
   socket.value.onopen = onSocketOpen
   socket.value.onmessage = onSocketMessage
   socket.value.onclose = onSocketClose
@@ -119,23 +157,24 @@ const onSocketOpen = (event: Event) => {
 }
 
 const onSocketMessage = (event: MessageEvent) => {
-  if (!userStore.user) return
+  if (!player.value) return
   const message = parseMessage(event)
 
-  if (message.disconnected) {
+  if (!message.connected) {
     enemyCard.value = 'hand'
     enemy.value = null
     console.log(`[dis]`, message)
+    gameStatus.value = 'waiting'
     return
   }
 
-  if (message.sender.id === userStore.user.id) {
+  if (message.sender.id === player.value.id) {
     console.log(`[get]`, message)
     currentCard.value = message.message.card
     if (enemy.value) gameStatus.value = getGameRoundStatus(currentCard.value, enemyCard.value)
   }
 
-  if (message.sender.id !== userStore.user.id) {
+  if (message.sender.id !== player.value.id) {
     console.log(`[enm]`, message)
     if (!enemy.value) {
       enemy.value = message.sender
@@ -143,6 +182,15 @@ const onSocketMessage = (event: MessageEvent) => {
     }
     enemyCard.value = message.message.card
     gameStatus.value = getGameRoundStatus(currentCard.value, enemyCard.value)
+  }
+  if (enemy) {
+    rounds.value = message.message.rounds.map(round => ({
+      order: round.order,
+      winnerId: round.winnerId,
+      winnerCard: round.winnerCard,
+      playerCard: round.players.find(p => p.id === player.value?.id)?.card || 'hand',
+      enemyCard: round.players.find(p => p.id === enemy.value?.id)?.card || 'hand',
+    }))
   }
 }
 
@@ -159,23 +207,40 @@ const onSocketError = (error: Event) => {
 }
 </script>
 
+<style scoped>
+.custom-scroll::-webkit-scrollbar {
+  scrollbar-gutter: stable;
+  width: 8px;
+  border-radius: 9999px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: theme('colors.slate.100');
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: theme('colors.slate.300');
+  border-radius: 9999px;
+}
+</style>
+
 <i18n lang="json">
 {
   "ru": {
     "playing": "Играют",
     "score": "Счёт",
-    "raund": "Раунд",
+    "round": "Раунд",
     "rock": "Камень",
     "paper": "Бумага",
-    "scissors": "Ножницы"
+    "scissors": "Ножницы",
+    "hand": "Ничего"
   },
   "en": {
     "playing": "Playing",
     "score": "Score",
-    "raund": "Raund",
+    "round": "Round",
     "rock": "Rock",
     "paper": "Paper",
-    "scissors": "Scissors"
+    "scissors": "Scissors",
+    "hand": "Nothing"
   }
 }
 </i18n>

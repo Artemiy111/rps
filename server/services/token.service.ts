@@ -20,7 +20,7 @@ class TokenService {
   }
 
   async createOrUpdateRefreshToken(userId: string, refreshToken: string): Promise<Token> {
-    const token = await prisma.token.upsert({
+    const token = await prisma.userToken.upsert({
       where: { userId },
       update: { refresh: refreshToken },
       create: {
@@ -50,7 +50,7 @@ class TokenService {
   }
 
   async findRefreshToken(refreshToken: string): Promise<Token | null> {
-    const token = await prisma.token.findUnique({
+    const token = await prisma.userToken.findUnique({
       where: {
         refresh: refreshToken,
       },
@@ -58,8 +58,12 @@ class TokenService {
     return token
   }
 
-  async deleteRefreshToken(refreshToken: string): Promise<Token> {
-    const deletedToken = await prisma.token.delete({ where: { refresh: refreshToken } })
+  async deleteRefreshTokenByUserId(userId: string): Promise<Token> {
+    const deletedToken = await prisma.userToken.delete({
+      where: {
+        userId,
+      },
+    })
     return deletedToken
   }
 }

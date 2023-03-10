@@ -3,6 +3,7 @@ import type { User, UserSafeInfo } from '~/types'
 import bcrypt from 'bcrypt'
 
 import { prisma } from '~/server/db'
+import { tokenService } from './token.service'
 
 class UserService {
   getUserSafeInfo(user: User): UserSafeInfo {
@@ -41,6 +42,17 @@ class UserService {
       },
     })
     return user
+  }
+
+  async deleteById(id: string): Promise<User> {
+    const deletedUser = await prisma.user.delete({
+      where: {
+        id,
+      },
+    })
+    await tokenService.deleteRefreshTokenByUserId(id)
+
+    return deletedUser
   }
 }
 

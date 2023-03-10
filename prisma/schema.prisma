@@ -18,11 +18,23 @@ model User {
   name     String @unique
   password String
 
-  matchesTherePlayer1 Game[] @relation("player1")
-  matchesTherePlayer2 Game[] @relation("player2")
-  token               Token?
+  matchesTherePlayer1 Game[]      @relation("player1")
+  matchesTherePlayer2 Game[]      @relation("player2")
+  token               UserToken?
+  games               Game[]
+  roundsWhereWon      GameRound[]
 
   @@map("users")
+}
+
+model UserToken {
+  id      String @id @default(uuid()) @db.Uuid
+  refresh String @unique
+
+  userId String @unique @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("users_token")
 }
 
 model Game {
@@ -34,22 +46,28 @@ model Game {
   endedAt   DateTime? @map("ended_at")
 
   player1Id    String @map("player1_id") @db.Uuid
-  player1Score Int    @default(0) @map("player1_score")
   player1      User   @relation(name: "player1", fields: [player1Id], references: [id])
+  player1Score Int    @default(0) @map("player1_score")
 
-  player2Id    String @map("player2_id") @db.Uuid
-  player2Score Int    @default(0) @map("player2_score")
-  player2      User   @relation(name: "player2", fields: [player2Id], references: [id])
+  player2Id    String? @map("player2_id") @db.Uuid
+  player2      User?   @relation(name: "player2", fields: [player2Id], references: [id])
+  player2Score Int     @default(0) @map("player2_score")
+
+  players User[]
+  rounds  GameRound[]
 
   @@map("matches")
 }
 
-model Token {
-  id      String @id @default(uuid()) @db.Uuid
-  refresh String @unique
+model GameRound {
+  id     String @id @default(uuid()) @db.Uuid
+  gameId String @db.Uuid
+  game   Game   @relation(fields: [gameId], references: [id])
+  order  Int    @default(1)
 
-  userId String @unique @map("user_id") @db.Uuid
-  user   User   @relation(fields: [userId], references: [id])
+  winnerId String? @db.Uuid
+  winner   User?   @relation(fields: [winnerId], references: [id])
 
-  @@map("tokens")
+  @@unique([gameId, order])
+  @@map("game_rounds")
 }

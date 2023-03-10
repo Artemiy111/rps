@@ -1,5 +1,5 @@
-import type { User, Token } from '@prisma/client'
-export type { User, Token }
+import type { User, UserToken as Token, Game, GameRound } from '@prisma/client'
+export type { User, Token, Game, GameRound }
 
 export type UserSafeInfo = Omit<User, 'password'>
 
@@ -11,15 +11,36 @@ export type UserApiData = {
 
 export type GameCard = 'rock' | 'paper' | 'scissors' | 'hand'
 
-export type GameMessage = {
+export type GameMessageFromClient = {
   game: {
     id: string
   }
   sender: UserSafeInfo
-  disconnected: boolean
   message: {
     card: GameCard
   }
+}
+
+export type GameMessageFromApi = {
+  game: {
+    id: string
+  }
+  sender: UserSafeInfo
+  connected: boolean
+  message: {
+    card: GameCard
+    rounds: GameRoundData[]
+  }
+}
+
+export type GameRoundData = {
+  order: number
+  winnerId?: string
+  winnerCard?: GameCard
+  players: {
+    id: string
+    card: GameCard
+  }[]
 }
 
 export type GameStatus = 'waiting' | 'timer' | 'lose' | 'draw' | 'win'
