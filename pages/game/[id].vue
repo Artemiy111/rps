@@ -17,11 +17,11 @@
         <div v-for="round in rounds" :key="round.order" class="flex flex-col gap-2">
           <h4 class="font-bold">{{ t('round') }} {{ round.order }}</h4>
           <div class="flex w-fit items-center gap-1 rounded-lg bg-slate-50 py-2 px-4">
-            <span :class="round.playerCard === round.winnerCard ? 'text-blue-500' : ''">{{
+            <span :class="player!.id === round.winnerId ? 'text-blue-500' : ''">{{
               t(round.playerCard)
             }}</span>
             /
-            <span :class="round.enemyCard === round.winnerCard ? 'text-blue-500' : ''">{{
+            <span :class="enemy?.id === round.winnerId ? 'text-blue-500' : ''">{{
               t(round.enemyCard)
             }}</span>
           </div>
@@ -32,9 +32,24 @@
       <GameCard card-name="hand" :is-selected="isEnemySelected" :is-selectable="false" />
       <GameStatus :game-status="gameStatus" />
       <div class="flex gap-10">
-        <GameCard card-name="rock" :is-selected="isSelected('rock')" @select="selectCard" />
-        <GameCard card-name="scissors" :is-selected="isSelected('scissors')" @select="selectCard" />
-        <GameCard card-name="paper" :is-selected="isSelected('paper')" @select="selectCard" />
+        <GameCard
+          card-name="rock"
+          :is-selected="isCardSelected('rock')"
+          :is-selectable="isCardSelectable"
+          @select="selectCard"
+        />
+        <GameCard
+          card-name="scissors"
+          :is-selected="isCardSelected('scissors')"
+          :is-selectable="isCardSelectable"
+          @select="selectCard"
+        />
+        <GameCard
+          card-name="paper"
+          :is-selected="isCardSelected('paper')"
+          :is-selectable="isCardSelectable"
+          @select="selectCard"
+        />
       </div>
     </div>
   </div>
@@ -44,12 +59,13 @@
 import GameCard from '~/components/GameCard.vue'
 import GameStatus from '~/components/GameStatus.vue'
 
-import type {
+import {
   GameCard as Card,
   GameMessageFromApi,
   GameMessageFromClient,
   GameStatus as Status,
-  UserSafeInfo,
+  isGameMessageFromApiEnded,
+  UserDTO,
 } from '~/types'
 
 import { useUserStore } from '~/store/userStore'
@@ -66,19 +82,21 @@ const route = useRoute()
 const router = useRouter()
 
 const gameId = route.params.id as string
-const gameStatus = ref<Status>('waiting')
+const gameStatus = ref<Status>('waitingEnemyJoin')
+const gameInitialized = ref(false)
+const isBreakBetweenRounds = ref(false)
 
 type Round = {
   order: number
   playerCard: Card
   enemyCard: Card
-  winnerCard?: Card
-  winnerId?: string
+  winnerCard: Card | null
+  winnerId: string | null
 }
 
 const rounds = ref<Round[]>([])
 
-const getScore = (player: Ref<UserSafeInfo | null>) => {
+const getScore = (player: Ref<UserDTO | null>) => {
   return computed(() => {
     if (!player.value) return 0
     return rounds.value.reduce(
@@ -91,42 +109,53 @@ const getScore = (player: Ref<UserSafeInfo | null>) => {
 const player = computed(() => userStore.user)
 const playerScore = getScore(player)
 
-const isSelected = (card: Card) => card === currentCard.value
+const isCardSelected = (card: Card) => card === currentCard.value
+const isPlayerSelected = computed(() => currentCard.value !== 'hand')
 const isEnemySelected = computed(() => enemyCard.value !== 'hand')
+const isCardSelectable = computed(() => gameStatus.value !== 'end' && !isBreakBetweenRounds.value)
 
 const socket = ref<WebSocket | null>(null)
 const currentCard = ref<Card>('hand')
 
-const enemy = ref<UserSafeInfo | null>(null)
+const enemy = ref<UserDTO | null>(null)
 const enemyCard = ref<Card>('hand')
 const enemyScore = getScore(enemy)
 
 watchEffect(() => {
-  if (!player) {
+  if (!player.value) {
     router.push(localePath('/'))
   }
 })
 
-// watchEffect(() => {
-//   if (currentCard.value === 'hand' && enemyCard.value === 'hand' && gameStatus.value !== 'waiting')
-//     gameStatus.value = 'timer'
-// })
+watchEffect(() => {
+  if (gameStatus.value === 'end') return
+  if (!enemy.value) {
+    gameStatus.value = 'waitingEnemyJoin'
+    return
+  }
+
+  if (isPlayerSelected.value && isEnemySelected.value)
+    gameStatus.value = getGameRoundStatus(currentCard.value, enemyCard.value)
+  else if (!isPlayerSelected.value && !isEnemySelected.value) gameStatus.value = 'waitingMoves'
+  else if (isPlayerSelected.value && !isEnemySelected.value) gameStatus.value = 'waitingEnemyMove'
+  else if (!isPlayerSelected.value && isEnemySelected.value) gameStatus.value = 'waitingPlayerMove'
+})
 
 const selectCard = (card: Card) => {
   if (card === currentCard.value) return
   currentCard.value = card
-
   sendMessage()
 }
 
 const sendMessage = () => {
   if (!player.value || !socket.value) return
   const message: GameMessageFromClient = {
+    initial: !gameInitialized.value,
     game: {
       id: gameId,
     },
-    sender: player.value,
-    message: {
+    sender: {
+      user: player.value,
       card: currentCard.value,
     },
   }
@@ -157,49 +186,67 @@ const onSocketOpen = (event: Event) => {
 }
 
 const onSocketMessage = (event: MessageEvent) => {
-  if (!player.value) return
-  const message = parseMessage(event)
+  if (!player.value) throw new Error('No player')
 
-  if (!message.connected) {
-    enemyCard.value = 'hand'
-    enemy.value = null
-    console.log(`[dis]`, message)
-    gameStatus.value = 'waiting'
-    return
-  }
+  const message = parseMessage(event) satisfies GameMessageFromApi
 
-  if (message.sender.id === player.value.id) {
-    console.log(`[get]`, message)
-    currentCard.value = message.message.card
-    if (enemy.value) gameStatus.value = getGameRoundStatus(currentCard.value, enemyCard.value)
-  }
+  const gameEnemy = message.game.players.find(p => p.id !== player.value?.id) || null
 
-  if (message.sender.id !== player.value.id) {
-    console.log(`[enm]`, message)
-    if (!enemy.value) {
-      enemy.value = message.sender
-      gameStatus.value = 'timer'
-    }
-    enemyCard.value = message.message.card
-    gameStatus.value = getGameRoundStatus(currentCard.value, enemyCard.value)
+  if (!enemy.value && gameEnemy) {
+    console.log(`[enm init]`)
+    enemy.value = gameEnemy
   }
-  if (enemy) {
-    rounds.value = message.message.rounds.map(round => ({
+  if (enemy.value) {
+    rounds.value = message.game.rounds.map(round => ({
       order: round.order,
       winnerId: round.winnerId,
       winnerCard: round.winnerCard,
-      playerCard: round.players.find(p => p.id === player.value?.id)?.card || 'hand',
-      enemyCard: round.players.find(p => p.id === enemy.value?.id)?.card || 'hand',
+      playerCard: round.players.find(p => p.id === player.value!.id)!.card || 'hand',
+      enemyCard: round.players.find(p => p.id === gameEnemy!.id)!.card || 'hand',
     }))
+  }
+
+  if (isGameMessageFromApiEnded(message)) {
+    console.log('ENDED', message)
+    gameStatus.value = 'end'
+    currentCard.value = 'hand'
+    enemyCard.value = 'hand'
+    return
+  }
+
+  if (enemy.value?.id === message.sender.user.id && !message.sender.connected) {
+    console.log(`[enm dis]`, message)
+    enemy.value = null
+    enemyCard.value = 'hand'
+    return
+  }
+
+  const isBreak =
+    message.game.rounds.length !== 0 &&
+    message.game.rounds.at(-1)!.breakBetweenRoundsEndsIn - Date.now() > 0
+
+  isBreakBetweenRounds.value = isBreak
+
+  if (message.sender.user.id === player.value.id) {
+    if (!gameInitialized.value) gameInitialized.value = true
+    console.log(`[get]`, message)
+    currentCard.value = message.sender.card
+  }
+
+  if (message.sender.user.id === enemy.value?.id) {
+    console.log(`[enm]`, message)
+    enemyCard.value = message.sender.card
   }
 }
 
 const onSocketClose = (event: CloseEvent) => {
   if (event.wasClean) {
+    console.log('[cls clean]')
   } else {
     console.log('[cls]')
   }
   socket.value = null
+  gameStatus.value = 'disconnection'
 }
 
 const onSocketError = (error: Event) => {

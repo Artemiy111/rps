@@ -32,5 +32,8 @@ const emit = defineEmits<{
   (e: 'select', cardName: GameCard): void
 }>()
 
-const selectCard = () => emit('select', props.cardName)
+const selectCard = () => {
+  if (!props.isSelectable) return
+  emit('select', props.cardName)
+}
 </script>

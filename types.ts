@@ -1,10 +1,10 @@
 import type { User, UserToken as Token, Game, GameRound } from '@prisma/client'
 export type { User, Token, Game, GameRound }
 
-export type UserSafeInfo = Omit<User, 'password'>
+export type UserDTO = Omit<User, 'password'>
 
 export type UserApiData = {
-  user: UserSafeInfo
+  user: UserDTO
   accessToken: string
   refreshToken: string
 }
@@ -12,36 +12,83 @@ export type UserApiData = {
 export type GameCard = 'rock' | 'paper' | 'scissors' | 'hand'
 
 export type GameMessageFromClient = {
+  initial: boolean
   game: {
     id: string
   }
-  sender: UserSafeInfo
-  message: {
-    card: GameCard
-  }
+  sender: { user: UserDTO; card: GameCard }
 }
 
-export type GameMessageFromApi = {
+export interface GameMessageFromApiBase {
   game: {
     id: string
-  }
-  sender: UserSafeInfo
-  connected: boolean
-  message: {
-    card: GameCard
+    started: boolean
+    startedAt: number | null
+    ended: boolean
+    endedAt: number | null
+    players: UserDTO[]
     rounds: GameRoundData[]
   }
 }
 
+export interface GameMessageFromApiEnded extends GameMessageFromApiBase {
+  game: {
+    id: string
+    started: boolean
+    startedAt: number | null
+    ended: true
+    endedAt: number
+    players: UserDTO[]
+    rounds: GameRoundData[]
+  }
+}
+
+export interface GameMessageFromApiContinues extends GameMessageFromApiBase {
+  game: {
+    id: string
+    started: boolean
+    startedAt: number | null
+    ended: false
+    endedAt: null
+    players: UserDTO[]
+    rounds: GameRoundData[]
+  }
+  sender: { user: UserDTO; connected: boolean; card: GameCard }
+}
+
+export type GameMessageFromApi = GameMessageFromApiEnded | GameMessageFromApiContinues
+
+export const isGameMessageFromApiEnded = (
+  message: GameMessageFromApiBase
+): message is GameMessageFromApiEnded => {
+  if (message.game.ended) return true
+  return false
+}
+
+export const isGameMessageFromApiContinues = (
+  message: GameMessageFromApiBase
+): message is GameMessageFromApiContinues => {
+  if (!message.game.ended) return true
+  return false
+}
+
 export type GameRoundData = {
   order: number
-  winnerId?: string
-  winnerCard?: GameCard
+  winnerId: string | null
+  winnerCard: GameCard | null
   players: {
     id: string
     card: GameCard
   }[]
+  breakBetweenRoundsEndsIn: number
 }
 
-export type GameStatus = 'waiting' | 'timer' | 'lose' | 'draw' | 'win'
+export type GameStatus = GameStatusWaiting | GameRoundStatus | 'timer' | 'end' | 'disconnection'
+
+export type GameStatusWaiting =
+  | 'waitingEnemyJoin'
+  | 'waitingEnemyMove'
+  | 'waitingPlayerMove'
+  | 'waitingMoves'
+
 export type GameRoundStatus = 'lose' | 'draw' | 'win'

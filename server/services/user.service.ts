@@ -1,4 +1,4 @@
-import type { User, UserSafeInfo } from '~/types'
+import type { User, UserDTO } from '~/types'
 
 import bcrypt from 'bcrypt'
 
@@ -6,7 +6,7 @@ import { prisma } from '~/server/db'
 import { tokenService } from './token.service'
 
 class UserService {
-  getUserSafeInfo(user: User): UserSafeInfo {
+  getUserSafeInfo(user: User): UserDTO {
     return {
       id: user.id,
       name: user.name,

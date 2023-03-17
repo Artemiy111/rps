@@ -1,9 +1,12 @@
+import { GameMessageFromApiBase, isGameMessageFromApiEnded } from './../../types'
+import { isGameMessageFromApiContinues } from '~/types'
 import type {
   GameMessageFromClient,
   GameMessageFromApi,
+  GameMessageFromApiContinues,
+  GameMessageFromApiEnded,
   GameRoundData,
   GameCard,
-  UserSafeInfo,
 } from '~/types'
 
 import { v4 as uuid } from 'uuid'
@@ -15,22 +18,29 @@ type SocketId = string
 type GameId = string
 
 type Player = {
+  id: string
+  name: string
   sockets: Set<SocketId>
   currentCard: GameCard
-} & UserSafeInfo
+}
 
-type GameData = {
+type WsGame = {
   id: GameId
+  createdAt: Date
+  started: boolean
+  startedAt: Date | null
+  ended: boolean
+  endedAt: Date | null
   players: Player[]
   rounds: GameRoundData[]
 }
 
 const getGameInfoFromSocketId = (
   socketId: SocketId
-): { game: GameData | undefined; player: Player | undefined; enemy: Player | undefined } => {
-  let game: GameData | undefined
-  let player: Player | undefined
-  let enemy: Player | undefined
+): { game: WsGame | null; player: Player | null; enemy: Player | null } => {
+  let game: WsGame | null = null
+  let player: Player | null = null
+  let enemy: Player | null = null
   for (const [_, gameData] of games) {
     for (const gamePlayer of gameData.players) {
       for (const playerSocketId of gamePlayer.sockets) {
@@ -46,11 +56,11 @@ const getGameInfoFromSocketId = (
   return { game, player, enemy }
 }
 
-const getGame = (gameId: string): GameData | undefined => games.get(gameId)
-const getPlayer = (game: GameData, playerId: string): Player | undefined =>
-  game.players.find(player => player.id === playerId)
-const getEnemy = (game: GameData, playerId: string): Player | undefined =>
-  game.players.find(player => player.id !== playerId)
+const getGame = (gameId: string): WsGame | null => games.get(gameId) || null
+const getPlayer = (game: WsGame, playerId: string): Player | null =>
+  game.players.find(player => player.id === playerId) || null
+const getEnemy = (game: WsGame, playerId: string): Player | null =>
+  game.players.find(player => player.id !== playerId) || null
 
 const parseMessage = (event: RawData): GameMessageFromClient => {
   return JSON.parse(event.toString('utf-8')) as GameMessageFromClient
@@ -59,40 +69,92 @@ const sendMessage = (ws: WebSocket, message: GameMessageFromApi) => {
   ws.send(JSON.stringify(message))
 }
 
-const generateMessage = (player: Player, game: GameData): GameMessageFromApi => {
-  return {
+const generateMessage = (player: Player, game: WsGame): GameMessageFromApi => {
+  const messageBase: GameMessageFromApiBase = {
     game: {
       id: game.id,
-    },
-    sender: {
-      id: player.id,
-      name: player.name,
-    },
-    connected: true,
-    message: {
-      card: player.currentCard,
+      started: game.started,
+      startedAt: game.startedAt?.getTime() || null,
+      ended: game.ended,
+      endedAt: game.endedAt?.getTime() || null,
+      players: game.players.map(p => ({ id: p.id, name: p.name })),
       rounds: game.rounds,
     },
   }
+  if (isGameMessageFromApiEnded(messageBase)) {
+    const messageEnded: GameMessageFromApiEnded = messageBase
+    return messageEnded
+  }
+
+  const messageContinues = {
+    game: messageBase.game,
+    sender: {
+      user: {
+        id: player.id,
+        name: player.name,
+      },
+      connected: true,
+      card: player.currentCard,
+    },
+  } as GameMessageFromApiContinues
+  return messageContinues
 }
 
-const generateDisconnectionMessage = (player: Player, game: GameData): GameMessageFromApi => {
-  return { ...generateMessage(player, game), connected: false }
+const generateRound = (
+  game: WsGame,
+  player: Player,
+  enemy: Player,
+  breakBetweenRoundsEndsIn: number
+): GameRoundData => {
+  const playerRoundResult = getPlayerRoundResult(player.currentCard, enemy.currentCard)
+  const newRound: GameRoundData = {
+    order: game.rounds.length + 1,
+    players: [
+      { id: player.id, card: player.currentCard },
+      { id: enemy.id, card: enemy.currentCard },
+    ],
+    winnerId: null,
+    winnerCard: null,
+    breakBetweenRoundsEndsIn: breakBetweenRoundsEndsIn,
+  }
+  switch (playerRoundResult) {
+    case 'win':
+      newRound.winnerId = player.id
+      newRound.winnerCard = player.currentCard
+      break
+    case 'lose':
+      newRound.winnerId = enemy.id
+      newRound.winnerCard = enemy.currentCard
+      break
+  }
+  return newRound
 }
 
-const addPlayer = (socketId: string, game: GameData, message: GameMessageFromClient) => {
+const generateDisconnectionMessage = (player: Player, game: WsGame): GameMessageFromApi => {
+  const disconnectionMessage = generateMessage(player, game)
+  if (isGameMessageFromApiContinues(disconnectionMessage))
+    disconnectionMessage.sender.connected = false
+  return disconnectionMessage
+}
+
+const addPlayer = (socketId: string, game: WsGame, message: GameMessageFromClient) => {
   const newPlayer = {
-    id: message.sender.id,
-    name: message.sender.name,
-    currentCard: message.message.card,
+    id: message.sender.user.id,
+    name: message.sender.user.name,
+    currentCard: message.sender.card,
     sockets: new Set([socketId]),
   }
   game.players.push(newPlayer)
 }
 
 const addGame = (gameId: string) => {
-  const newGameData: GameData = {
+  const newGameData: WsGame = {
     id: gameId,
+    createdAt: new Date(),
+    started: false,
+    startedAt: null,
+    ended: false,
+    endedAt: null,
     players: [],
     rounds: [],
   }
@@ -100,7 +162,7 @@ const addGame = (gameId: string) => {
 }
 
 const sockets = new Map<SocketId, WebSocket>()
-const games = new Map<GameId, GameData>()
+const games = new Map<GameId, WsGame>()
 
 export default defineNitroPlugin(() => {
   const wss = new WebSocketServer({ port: 4000, path: '/api/game/ws' })
@@ -121,7 +183,7 @@ const onSocketMessage = (ws: WebSocket, socketId: SocketId) => {
   return (event: RawData) => {
     console.log(`[get ws] ${socketId}`)
     const message = parseMessage(event)
-    const isInitialSocketMessage = message.message.card === 'hand'
+    const isInitialSocketMessage = message.initial
 
     if (!getGame(message.game.id)) addGame(message.game.id)
 
@@ -129,43 +191,61 @@ const onSocketMessage = (ws: WebSocket, socketId: SocketId) => {
 
     if (
       gameExisting.players.length === 0 ||
-      (gameExisting.players.length === 1 && gameExisting.players[0].id !== message.sender.id)
+      (gameExisting.players.length === 1 && gameExisting.players[0].id !== message.sender.user.id)
     )
       addPlayer(socketId, gameExisting, message)
 
-    const player = getPlayer(gameExisting, message.sender.id)!
+    if (!gameExisting.started && gameExisting.players.length === 2) {
+      gameExisting.started = true
+      gameExisting.startedAt = new Date()
+    }
+
+    const player = getPlayer(gameExisting, message.sender.user.id)
     if (!player) return
     if (!player.sockets.has(socketId)) player.sockets.add(socketId)
-    const enemy = getEnemy(gameExisting, message.sender.id)
+    const enemy = getEnemy(gameExisting, message.sender.user.id)
 
-    if (!isInitialSocketMessage) player.currentCard = message.message.card
+    const isNextRound =
+      gameExisting.rounds.length === 0 ||
+      (gameExisting.rounds.length >= 1 &&
+        gameExisting.rounds.at(-1)!.breakBetweenRoundsEndsIn - Date.now() < 0)
+
+    const isBreakBetweenRounds = !isNextRound
+
+    if (isBreakBetweenRounds) return
+    console.log(`[round]`)
+    if (!isInitialSocketMessage) player.currentCard = message.sender.card
 
     if (enemy && player.currentCard !== 'hand' && enemy.currentCard !== 'hand') {
-      const playerRoundResult = getPlayerRoundResult(player.currentCard, enemy.currentCard)
-      const newRound: GameRoundData = {
-        order: gameExisting.rounds.length + 1,
-        players: [
-          { id: player.id, card: player.currentCard },
-          { id: enemy.id, card: enemy.currentCard },
-        ],
-      }
-      switch (playerRoundResult) {
-        case 'win':
-          newRound.winnerId = player.id
-          newRound.winnerCard = player.currentCard
-          break
-        case 'lose':
-          newRound.winnerId = enemy.id
-          newRound.winnerCard = enemy.currentCard
-          break
-      }
+      const roundEndTime = new Date()
+      const breakBetweenRoundsEndsIn = roundEndTime.getTime() + 1000
+      const newRound = generateRound(gameExisting, player, enemy, breakBetweenRoundsEndsIn)
+
       gameExisting.rounds.push(newRound)
-      player.currentCard = 'hand'
-      enemy.currentCard = 'hand'
+      sendPlayerMessageToAllGameSockets(gameExisting, player)
       setTimeout(() => {
+        const isGameEnd = (game: WsGame) => game.rounds.length === 5
+        if (isGameEnd(gameExisting)) {
+          gameExisting.ended = true
+          gameExisting.endedAt = roundEndTime
+
+          sendPlayerMessageToAllGameSockets(gameExisting, player)
+          // gameExisting.players.forEach(gamePlayer =>
+          //   gamePlayer.sockets.forEach(playerSocketId => sockets.get(playerSocketId)!.close())
+          // )
+          return
+        }
+
+        player.currentCard = 'hand'
+        enemy.currentCard = 'hand'
         sendPlayerMessageToAllGameSockets(gameExisting, player)
         sendPlayerMessageToAllGameSockets(gameExisting, enemy)
-      }, 1000)
+      }, breakBetweenRoundsEndsIn - Date.now())
+
+      // if (gameExisting.rounds.length === 5) {
+
+      // }
+      return
     }
 
     if (isInitialSocketMessage) {
@@ -185,7 +265,7 @@ const onSocketMessage = (ws: WebSocket, socketId: SocketId) => {
 const sendPlayerMessageToCurrentSocket = (
   ws: WebSocket,
   socketId: string,
-  game: GameData,
+  game: WsGame,
   player: Player
 ) => {
   const playerMessage = generateMessage(player, game)
@@ -194,13 +274,13 @@ const sendPlayerMessageToCurrentSocket = (
   console.log(game.players.map(p => p.name))
 }
 
-const sendEnemyMessageToCurrentSocket = (ws: WebSocket, game: GameData, enemy: Player) => {
+const sendEnemyMessageToCurrentSocket = (ws: WebSocket, game: WsGame, enemy: Player) => {
   const enemyMessage = generateMessage(enemy, game)
   // console.log(`[from en]`)
   sendMessage(ws, enemyMessage)
 }
 
-const sendPlayerMessageToEnemy = (game: GameData, player: Player, enemy: Player) => {
+const sendPlayerMessageToEnemy = (game: WsGame, player: Player, enemy: Player) => {
   const playerMessage = generateMessage(player, game)
   enemy.sockets.forEach(enemySocketId => {
     // console.log(`[to enm from] ${enemySocketId}`)
@@ -208,9 +288,8 @@ const sendPlayerMessageToEnemy = (game: GameData, player: Player, enemy: Player)
   })
 }
 
-const sendPlayerMessageToAllGameSockets = (game: GameData, player: Player) => {
+const sendPlayerMessageToAllGameSockets = (game: WsGame, player: Player) => {
   const playerMessage = generateMessage(player, game)
-  console.log(game.players)
   for (const gamePlayer of game.players) {
     for (const gamePlayerSocketId of gamePlayer.sockets) {
       console.log(`[to all from] ${player.name} [to ws] ${gamePlayerSocketId}`)
@@ -223,17 +302,17 @@ const onSocketClose = (socketId: SocketId) => {
   return () => {
     const { player, enemy, game } = getGameInfoFromSocketId(socketId)
 
-    if (!game || !player) throw new Error('AAA')
-
-    if (enemy && player.sockets.size === 1) {
-      for (const playerSocketId of enemy.sockets) {
-        console.log(`[dis] ws ${socketId}`)
-        const disconnectionMessage = generateDisconnectionMessage(player, game)
-        sendMessage(sockets.get(playerSocketId)!, disconnectionMessage)
+    if (!game || !player) throw new Error('No such game or player')
+    const playerDisconnectionMessage = generateDisconnectionMessage(player, game)
+    console.log(`ended?`, playerDisconnectionMessage.game.ended)
+    const isOnlyPlayerSocket = player.sockets.size === 1
+    if (enemy && isOnlyPlayerSocket) {
+      for (const enemySocketId of enemy.sockets) {
+        sendMessage(sockets.get(enemySocketId)!, playerDisconnectionMessage)
       }
 
       player.sockets.delete(socketId)
-      game.players = game.players.filter(gamePlayer => gamePlayer.id !== player.id)
+      //game.players = game.players.filter(gamePlayer => gamePlayer.id !== player.id)
       sockets.delete(socketId)
       console.log(`[del] ws ${socketId}`)
       return

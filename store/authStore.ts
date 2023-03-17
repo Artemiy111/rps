@@ -1,4 +1,4 @@
-import type { UserSafeInfo, UserApiData, Token } from '~/types'
+import type { UserDTO, UserApiData, Token } from '~/types'
 
 import { defineStore } from 'pinia'
 
