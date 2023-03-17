@@ -18,11 +18,9 @@ model User {
   name     String @unique
   password String
 
-  matchesTherePlayer1 Game[]      @relation("player1")
-  matchesTherePlayer2 Game[]      @relation("player2")
-  token               UserToken?
-  games               Game[]
-  roundsWhereWon      GameRound[]
+  token          UserToken?
+  games          Game[]
+  roundsWhereWon GameRound[]
 
   @@map("users")
 }
@@ -45,14 +43,6 @@ model Game {
   startedAt DateTime? @map("started_at")
   endedAt   DateTime? @map("ended_at")
 
-  player1Id    String @map("player1_id") @db.Uuid
-  player1      User   @relation(name: "player1", fields: [player1Id], references: [id])
-  player1Score Int    @default(0) @map("player1_score")
-
-  player2Id    String? @map("player2_id") @db.Uuid
-  player2      User?   @relation(name: "player2", fields: [player2Id], references: [id])
-  player2Score Int     @default(0) @map("player2_score")
-
   players User[]
   rounds  GameRound[]
 
@@ -65,9 +55,22 @@ model GameRound {
   game   Game   @relation(fields: [gameId], references: [id])
   order  Int    @default(1)
 
-  winnerId String? @db.Uuid
-  winner   User?   @relation(fields: [winnerId], references: [id])
+  winnerId   String?           @db.Uuid
+  winner     User?             @relation(fields: [winnerId], references: [id])
+  winnerCard Card?
+  players    GameRoundPlayer[]
 
   @@unique([gameId, order])
   @@map("game_rounds")
+}
+
+model GameRoundPlayer {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  card        Card
+  gameRound   GameRound @relation(fields: [gameRoundId], references: [id])
+  gameRoundId String    @db.Uuid
+
+  @@unique([gameRoundId, userId])
+  @@map("game_round_players")
 }
