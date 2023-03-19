@@ -9,14 +9,15 @@ export type UserApiData = {
   refreshToken: string
 }
 
-export type GameCard = 'rock' | 'paper' | 'scissors' | 'hand'
+export type GameCard = 'rock' | 'paper' | 'scissors' | null
+export type GameEmoji = '😎' | '👺' | '🤓' | '🏳️‍🌈'
 
 export type GameMessageFromClient = {
   initial: boolean
   game: {
     id: string
   }
-  sender: { user: UserDTO; card: GameCard }
+  sender: { user: UserDTO; card: GameCard; emoji?: GameEmoji }
 }
 
 export interface GameMessageFromApiBase {
@@ -53,10 +54,13 @@ export interface GameMessageFromApiContinues extends GameMessageFromApiBase {
     players: UserDTO[]
     rounds: GameRoundData[]
   }
-  sender: { user: UserDTO; connected: boolean; card: GameCard }
+  sender: { user: UserDTO; connected: boolean; card: GameCard; emoji?: GameEmoji }
 }
 
-export type GameMessageFromApi = GameMessageFromApiEnded | GameMessageFromApiContinues
+export type GameMessageFromApi =
+  | GameMessageFromApiBase
+  | GameMessageFromApiEnded
+  | GameMessageFromApiContinues
 
 export const isGameMessageFromApiEnded = (
   message: GameMessageFromApiBase

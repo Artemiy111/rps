@@ -1,5 +1,5 @@
 <template>
-  <div class="flex gap-24 md:gap-12 lg:gap-20">
+  <div class="flex justify-between gap-24 md:gap-12 lg:gap-20">
     <div class="flex w-fit flex-col gap-8">
       <section class="flex w-fit min-w-[210px] flex-col gap-2">
         <h2 class="font-bold">{{ t('playing') }}</h2>
@@ -18,18 +18,18 @@
           <h4 class="font-bold">{{ t('round') }} {{ round.order }}</h4>
           <div class="flex w-fit items-center gap-1 rounded-lg bg-slate-50 py-2 px-4">
             <span :class="player!.id === round.winnerId ? 'text-blue-500' : ''">{{
-              t(round.playerCard)
+              t(round.playerCard || 'hand')
             }}</span>
             /
             <span :class="enemy?.id === round.winnerId ? 'text-blue-500' : ''">{{
-              t(round.enemyCard)
+              t(round.enemyCard || 'hand')
             }}</span>
           </div>
         </div>
       </section>
     </div>
     <div class="flex flex-col items-center gap-8">
-      <GameCard card-name="hand" :is-selected="isEnemySelected" :is-selectable="false" />
+      <GameCard :card-name="null" :is-selected="isEnemySelected" :is-selectable="false" />
       <GameStatus :game-status="gameStatus" />
       <div class="flex gap-10">
         <GameCard
@@ -52,24 +52,31 @@
         />
       </div>
     </div>
+
+    <GameEmojiBar @select="sendMessage($event)" />
+    <GameEmojiShow ref="gameEmojiShow" />
   </div>
 </template>
 
 <script setup lang="ts">
 import GameCard from '~/components/GameCard.vue'
 import GameStatus from '~/components/GameStatus.vue'
+import GameEmojiBar from '~/components/GameEmojiBar.vue'
+import GameEmojiShow from '~/components/GameEmojiShow.vue'
 
 import {
   GameCard as Card,
+  GameEmoji,
   GameMessageFromApi,
   GameMessageFromClient,
   GameStatus as Status,
   isGameMessageFromApiEnded,
   UserDTO,
+  isGameMessageFromApiContinues,
 } from '~/types'
 
-import { useUserStore } from '~/store/userStore'
-import { getGameRoundStatus } from '~/helpers/getGameRoundStatus'
+import { useUserStore } from '~~/stores/user.store.js'
+import { getPlayerRoundResult } from '~/helpers/getPlayerRoundResult.js'
 
 definePageMeta({
   middleware: 'auth',
@@ -110,16 +117,18 @@ const player = computed(() => userStore.user)
 const playerScore = getScore(player)
 
 const isCardSelected = (card: Card) => card === currentCard.value
-const isPlayerSelected = computed(() => currentCard.value !== 'hand')
-const isEnemySelected = computed(() => enemyCard.value !== 'hand')
+const isPlayerSelected = computed(() => currentCard.value !== null)
+const isEnemySelected = computed(() => enemyCard.value !== null)
 const isCardSelectable = computed(() => gameStatus.value !== 'end' && !isBreakBetweenRounds.value)
 
 const socket = ref<WebSocket | null>(null)
-const currentCard = ref<Card>('hand')
+const currentCard = ref<Card>(null)
 
 const enemy = ref<UserDTO | null>(null)
-const enemyCard = ref<Card>('hand')
+const enemyCard = ref<Card>(null)
 const enemyScore = getScore(enemy)
+
+const gameEmojiShow = ref<InstanceType<typeof GameEmojiShow> | null>(null)
 
 watchEffect(() => {
   if (!player.value) {
@@ -135,11 +144,15 @@ watchEffect(() => {
   }
 
   if (isPlayerSelected.value && isEnemySelected.value)
-    gameStatus.value = getGameRoundStatus(currentCard.value, enemyCard.value)
+    gameStatus.value = getPlayerRoundResult(currentCard.value, enemyCard.value)
   else if (!isPlayerSelected.value && !isEnemySelected.value) gameStatus.value = 'waitingMoves'
   else if (isPlayerSelected.value && !isEnemySelected.value) gameStatus.value = 'waitingEnemyMove'
   else if (!isPlayerSelected.value && isEnemySelected.value) gameStatus.value = 'waitingPlayerMove'
 })
+
+const randomNumber = (min: number, max: number) => {
+  return Math.random() * (max - min) + min
+}
 
 const selectCard = (card: Card) => {
   if (card === currentCard.value) return
@@ -147,7 +160,7 @@ const selectCard = (card: Card) => {
   sendMessage()
 }
 
-const sendMessage = () => {
+const sendMessage = (emoji?: GameEmoji) => {
   if (!player.value || !socket.value) return
   const message: GameMessageFromClient = {
     initial: !gameInitialized.value,
@@ -157,6 +170,7 @@ const sendMessage = () => {
     sender: {
       user: player.value,
       card: currentCard.value,
+      emoji: emoji,
     },
   }
 
@@ -201,23 +215,27 @@ const onSocketMessage = (event: MessageEvent) => {
       order: round.order,
       winnerId: round.winnerId,
       winnerCard: round.winnerCard,
-      playerCard: round.players.find(p => p.id === player.value!.id)!.card || 'hand',
-      enemyCard: round.players.find(p => p.id === gameEnemy!.id)!.card || 'hand',
+      playerCard: round.players.find(p => p.id === player.value!.id)!.card || null,
+      enemyCard: round.players.find(p => p.id === gameEnemy!.id)!.card || null,
     }))
   }
 
   if (isGameMessageFromApiEnded(message)) {
     console.log('ENDED', message)
     gameStatus.value = 'end'
-    currentCard.value = 'hand'
-    enemyCard.value = 'hand'
+    currentCard.value = null
+    enemyCard.value = null
     return
   }
+
+  if (!isGameMessageFromApiContinues(message)) return
+
+  if (message.sender.emoji) gameEmojiShow.value?.show(message.sender.emoji)
 
   if (enemy.value?.id === message.sender.user.id && !message.sender.connected) {
     console.log(`[enm dis]`, message)
     enemy.value = null
-    enemyCard.value = 'hand'
+    enemyCard.value = null
     return
   }
 
@@ -266,6 +284,32 @@ const onSocketError = (error: Event) => {
 .custom-scroll::-webkit-scrollbar-thumb {
   background-color: theme('colors.slate.300');
   border-radius: 9999px;
+}
+
+@keyframes emoji {
+  0% {
+    transform: translate(0px, 0px);
+    scale: 0.9;
+  }
+
+  50% {
+    transform: translate(-100px, -200px);
+    scale: 1.5;
+    rotate: 10deg;
+  }
+
+  70% {
+    opacity: 90%;
+  }
+
+  100% {
+    transform: translate(-300px, -440px);
+    opacity: 0;
+  }
+}
+.emoji {
+  animation: emoji 2s cubic-bezier(0.4, 0, 1, 1) forwards;
+  user-select: none;
 }
 </style>
 

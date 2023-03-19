@@ -46,7 +46,7 @@ model Game {
   players User[]
   rounds  GameRound[]
 
-  @@map("matches")
+  @@map("games")
 }
 
 model GameRound {

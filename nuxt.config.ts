@@ -14,6 +14,7 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     '@nuxtjs/google-fonts',
     'nuxt-icons',
+    '@nuxt/devtools',
   ],
   build: {
     transpile: ['@nuxtjs/google-fonts'],

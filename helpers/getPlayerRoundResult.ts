@@ -1,17 +1,20 @@
 import type { GameCard, GameRoundStatus } from '~/types'
 
-export const getGameRoundStatus = (playerCard: GameCard, enemyCard: GameCard): GameRoundStatus => {
+export const getPlayerRoundResult = (
+  playerCard: GameCard,
+  enemyCard: GameCard
+): GameRoundStatus => {
   switch (playerCard) {
-    case 'hand':
+    case null:
       switch (enemyCard) {
-        case 'hand':
+        case null:
           return 'draw'
         default:
           return 'lose'
       }
     case 'rock':
       switch (enemyCard) {
-        case 'hand':
+        case null:
           return 'win'
         case 'rock':
           return 'draw'
@@ -22,7 +25,7 @@ export const getGameRoundStatus = (playerCard: GameCard, enemyCard: GameCard): G
       }
     case 'paper':
       switch (enemyCard) {
-        case 'hand':
+        case null:
           return 'win'
         case 'rock':
           return 'win'
@@ -33,7 +36,7 @@ export const getGameRoundStatus = (playerCard: GameCard, enemyCard: GameCard): G
       }
     case 'scissors':
       switch (enemyCard) {
-        case 'hand':
+        case null:
           return 'win'
         case 'rock':
           return 'lose'

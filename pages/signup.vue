@@ -46,8 +46,8 @@ import VFormInputset from '~/components/ui/VFormInputset.vue'
 import { FetchError } from 'ofetch'
 import type { ZodError } from 'zod'
 
-import { signupSchema } from '~/schema/authSchema'
-import { useAuthStore } from '~/store/authStore'
+import { signupSchema } from '~~/schema/auth.schema.js'
+import { useAuthStore } from '~~/stores/auth.store.js'
 
 const { t } = useI18n()
 const localePath = useLocalePath()

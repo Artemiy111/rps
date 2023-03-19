@@ -5,16 +5,16 @@ export const getPlayerRoundResult = (
   enemyCard: GameCard
 ): GameRoundStatus => {
   switch (playerCard) {
-    case 'hand':
+    case null:
       switch (enemyCard) {
-        case 'hand':
+        case null:
           return 'draw'
         default:
           return 'lose'
       }
     case 'rock':
       switch (enemyCard) {
-        case 'hand':
+        case null:
           return 'win'
         case 'rock':
           return 'draw'
@@ -25,7 +25,7 @@ export const getPlayerRoundResult = (
       }
     case 'paper':
       switch (enemyCard) {
-        case 'hand':
+        case null:
           return 'win'
         case 'rock':
           return 'win'
@@ -36,7 +36,7 @@ export const getPlayerRoundResult = (
       }
     case 'scissors':
       switch (enemyCard) {
-        case 'hand':
+        case null:
           return 'win'
         case 'rock':
           return 'lose'

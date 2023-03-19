@@ -1,8 +1,9 @@
 import { WebSocketServer, WebSocket, RawData } from 'ws'
 
-import { gameWsService, type GameWs } from '~/server/services/gameWs.service'
+import { gameWsService, GameWs, GameWsSender, PlayerWs } from '~/server/services/gameWs.service'
 
-export default defineNitroPlugin(() => {
+export default defineNitroPlugin(async () => {
+  await gameWsService.loadGames()
   const wss = new WebSocketServer({ port: 4000, path: '/api/game/ws' })
   wss.on('connection', onSocketConnection)
 })
@@ -11,7 +12,7 @@ const onSocketConnection = (ws: WebSocket) => {
   const socketId = gameWsService.generateSocketId()
   console.log(`.\n[con ws] ${socketId}`)
 
-  gameWsService.addSocket(socketId, ws)
+  // gameWsService.addSocket(socketId, ws)
   ws.on('message', onSocketMessage(ws, socketId))
   ws.on('close', onSocketClose(socketId))
 }
@@ -19,77 +20,70 @@ const onSocketConnection = (ws: WebSocket) => {
 const onSocketMessage = (ws: WebSocket, socketId: string) => {
   return (event: RawData) => {
     console.log(`[get ws] ${socketId}`)
-    const message = gameWsService.parseMessage(event)
+
+    const message = GameWsSender.parseMessage(event)
     const isInitialSocketMessage = message.initial
 
     if (!gameWsService.getGame(message.game.id)) gameWsService.addGame(message.game.id)
 
-    const gameExisting = gameWsService.getGame(message.game.id)!
-    if (gameExisting.ended) return
+    const game = gameWsService.getGame(message.game.id)!
+    const gameSender = new GameWsSender(game)
+
+    if (game.ended) return gameSender.sendBaseMessageToCurrentSocket(socketId, ws)
 
     if (
-      gameExisting.players.length === 0 ||
-      (gameExisting.players.length === 1 && gameExisting.players[0].id !== message.sender.user.id)
-    )
-      gameWsService.addPlayer(socketId, gameExisting, message)
-
-    if (!gameExisting.started && gameExisting.players.length === 2) {
-      gameExisting.started = true
-      gameExisting.startedAt = new Date()
+      game.players.length === 0 ||
+      (game.players.length === 1 && game.players[0].id !== message.sender.user.id)
+    ) {
+      const newPlayer = new PlayerWs(message.sender.user.id, message.sender.user.name)
+      newPlayer.addSocket(socketId, ws)
+      newPlayer.currentCard = message.sender.card
+      game.addPlayer(newPlayer)
     }
 
-    const player = gameWsService.getPlayer(gameExisting, message.sender.user.id)
+    if (!game.started && game.isFilled) game.setStartedStatus()
+
+    const player = game.getPlayer(message.sender.user.id)
     if (!player) return
-    if (!player.sockets.has(socketId)) player.sockets.add(socketId)
-    const enemy = gameWsService.getEnemy(gameExisting, message.sender.user.id)
+    if (!player.hasSocket(socketId)) player.addSocket(socketId, ws)
 
-    const isNextRound =
-      gameExisting.rounds.length === 0 ||
-      (gameExisting.rounds.length >= 1 &&
-        gameExisting.rounds.at(-1)!.breakBetweenRoundsEndsIn - Date.now() < 0)
+    const enemy = game.getEnemy(message.sender.user.id)
 
-    const isBreakBetweenRounds = !isNextRound
-
-    if (isBreakBetweenRounds) return
+    if (game.isBreakBetweenRounds) return
     console.log(`[round]`)
     if (!isInitialSocketMessage) player.currentCard = message.sender.card
 
-    if (enemy && player.currentCard !== 'hand' && enemy.currentCard !== 'hand') {
-      const roundEndTime = new Date()
-      const breakBetweenRoundsEndsIn = roundEndTime.getTime() + 1000
-      gameWsService.addRound(gameExisting, player, enemy, breakBetweenRoundsEndsIn)
+    if (enemy && player.hasCard && enemy.hasCard) {
+      const breakBetweenRoundsEndsIn = game.addRound()
 
-      gameWsService.sendPlayerMessageToAllGameSockets(gameExisting, player)
+      gameSender.sendPlayerMessageToAllGameSockets(player.id)
 
       setTimeout(() => {
         const isGameEnd = (game: GameWs) => game.rounds.length === 5
-        if (isGameEnd(gameExisting)) {
-          gameExisting.ended = true
-          gameExisting.endedAt = roundEndTime
-
-          gameWsService.sendPlayerMessageToAllGameSockets(gameExisting, player)
+        if (isGameEnd(game)) {
+          game.setEndedStatus()
+          gameSender.sendPlayerMessageToAllGameSockets(player.id)
           return
         }
 
-        player.currentCard = 'hand'
-        enemy.currentCard = 'hand'
-        gameWsService.sendPlayerMessageToAllGameSockets(gameExisting, player)
-        gameWsService.sendPlayerMessageToAllGameSockets(gameExisting, enemy)
+        player.currentCard = null
+        enemy.currentCard = null
+        gameSender.sendPlayerMessageToAllGameSockets(player.id)
+        gameSender.sendPlayerMessageToAllGameSockets(enemy.id)
       }, breakBetweenRoundsEndsIn - Date.now())
       return
     }
 
     if (isInitialSocketMessage) {
-      gameWsService.sendPlayerMessageToCurrentSocket(ws, socketId, gameExisting, player)
+      gameSender.sendPlayerMessageToCurrentSocket(socketId, ws, player.id)
 
       if (enemy) {
-        gameWsService.sendEnemyMessageToCurrentSocket(ws, gameExisting, enemy)
-        gameWsService.sendPlayerMessageToEnemy(gameExisting, player, enemy)
+        gameSender.sendEnemyMessageToCurrentSocket(socketId, ws, enemy.id)
+        gameSender.sendPlayerMessageToEnemy(player.id, enemy.id)
       }
       return
     }
-
-    gameWsService.sendPlayerMessageToAllGameSockets(gameExisting, player)
+    gameSender.sendPlayerMessageToAllGameSockets(player.id, message.sender.emoji)
   }
 }
 
@@ -97,25 +91,16 @@ const onSocketClose = (socketId: string) => {
   return () => {
     const { player, enemy, game } = gameWsService.getGameInfoFromSocketId(socketId)
 
-    if (!game || !player) throw new Error('No such game or player')
-    const playerDisconnectionMessage = gameWsService.generateDisconnectionMessage(game, player)
-    console.log(`ended?`, game.ended)
-    const isOnlyPlayerSocket = player.sockets.size === 1
-    if (enemy && isOnlyPlayerSocket) {
-      for (const enemySocketId of enemy.sockets) {
-        gameWsService.sendMessage(
-          gameWsService.sockets.get(enemySocketId)!,
-          playerDisconnectionMessage
-        )
-      }
+    if (!game) throw new Error('No such game')
+    if (!player) throw new Error('No such player')
 
-      player.sockets.delete(socketId)
-      gameWsService.sockets.delete(socketId)
-      console.log(`[del] ws ${socketId}`)
+    player.removeSocket(socketId)
+    console.log(`[del] ws ${socketId}`)
+
+    if (enemy && !player.isConnected) {
+      const gameSender = new GameWsSender(game)
+      gameSender.sendPlayerMessageToEnemy(player.id, enemy.id)
       return
     }
-    player.sockets.delete(socketId)
-    gameWsService.sockets.delete(socketId)
-    console.log(`[del] ws ${socketId}`)
   }
 }

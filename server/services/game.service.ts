@@ -1,20 +1,24 @@
-import type { Game } from '~/types'
+import type { Game, GameCard } from '~/types'
 import { prisma } from '~/server/db'
 
 const include = {
-  player1: true,
-  player2: true,
   players: true,
   rounds: true,
 }
 
 class GameService {
+  async getAllGames() {
+    return await prisma.game.findMany({
+      include: include,
+    })
+  }
+
   async findGame(id: string) {
     return await prisma.game.findUnique({
       where: {
         id,
       },
-      include,
+      include: include,
     })
   }
 
@@ -34,12 +38,16 @@ class GameService {
   async createGame(playerId: string) {
     return await prisma.game.create({
       data: {
-        player1Id: playerId,
+        players: {
+          connect: {
+            id: playerId,
+          },
+        },
         rounds: {
           create: {},
         },
       },
-      include,
+      include: include,
     })
   }
 
@@ -55,7 +63,7 @@ class GameService {
           },
         },
       },
-      include,
+      include: include,
     })
   }
 
@@ -69,11 +77,11 @@ class GameService {
           },
         },
       },
-      include,
+      include: include,
     })
   }
 
-  async updateRound(gameId: string, roundOrder: number, winnerId: string) {
+  async updateRound(gameId: string, roundOrder: number, winnerId?: string, winnerCard?: GameCard) {
     return prisma.game.update({
       where: {
         id: gameId,
@@ -85,12 +93,13 @@ class GameService {
               order: roundOrder,
             },
             data: {
-              winnerId,
+              winnerId: winnerId,
+              winnerCard: winnerCard,
             },
           },
         },
       },
-      include,
+      include: include,
     })
   }
 }

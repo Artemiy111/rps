@@ -6,13 +6,6 @@ import { prisma } from '~/server/db'
 import { tokenService } from './token.service'
 
 class UserService {
-  getUserSafeInfo(user: User): UserDTO {
-    return {
-      id: user.id,
-      name: user.name,
-    }
-  }
-
   async findById(id: string): Promise<User | null> {
     const user = await prisma.user.findUnique({
       where: {

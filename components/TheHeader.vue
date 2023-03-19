@@ -1,6 +1,9 @@
 <template>
   <header class="flex items-center justify-between py-8">
-    <NuxtLink :to="localePath('/')" class="outline-none focus-visible:opacity-50">
+    <NuxtLink
+      :to="localePath('/')"
+      class="outline-none transition-opacity hover:opacity-70 focus-visible:opacity-70 active:opacity-50"
+    >
       <span class="text-md font-medium md:text-base">{{ t('logo') }}</span></NuxtLink
     >
     <div class="flex items-center gap-8 md:gap-6">
@@ -37,7 +40,9 @@
       <div v-else-if="userStore.user" class="group relative">
         <span>{{ userStore.user.name }}</span>
         <div class="absolute right-0 z-50 pt-4">
-          <div class="hidden rounded-lg bg-slate-50 py-2 px-4 transition-all group-hover:flex">
+          <div
+            class="hidden flex-col gap-3 rounded-lg bg-slate-50 py-3 px-4 shadow-lg transition-all group-hover:flex"
+          >
             <span
               tabindex="0"
               class="cursor-pointer whitespace-nowrap text-slate-500 hover:text-slate-700 active:text-slate-800"
@@ -53,8 +58,8 @@
 
 <script setup lang="ts">
 import VButton from '~/components/ui/VButton.vue'
-import { useAuthStore } from '~/store/authStore'
-import { useUserStore } from '~/store/userStore'
+import { useAuthStore } from '~~/stores/auth.store.js'
+import { useUserStore } from '~~/stores/user.store.js'
 
 const { t, locale, setLocale } = useI18n()
 const localePath = useLocalePath()

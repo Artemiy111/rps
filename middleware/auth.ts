@@ -1,4 +1,4 @@
-import { useAuthStore } from '~/store/authStore'
+import { useAuthStore } from '~~/stores/auth.store'
 const localePath = useLocalePath()
 const authStore = useAuthStore()
 

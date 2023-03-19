@@ -6,6 +6,7 @@ import { userServise } from './user.service'
 import { tokenService } from './token.service'
 
 import { ApiError } from '~/server/errors/ApiError'
+import { UserDTO } from '~~/server/dtos/UserDTO'
 
 class AuthService {
   async login(data: { username: string; password: string }): Promise<UserApiData> {
@@ -20,7 +21,7 @@ class AuthService {
       tokenService.createOrUpdateRefreshToken(user.id, tokens.refreshToken)
 
       return {
-        user: userServise.getUserSafeInfo(user),
+        user: new UserDTO(user),
         ...tokens,
       }
     } catch (e) {
@@ -41,7 +42,7 @@ class AuthService {
       tokenService.createOrUpdateRefreshToken(user.id, tokens.refreshToken)
 
       return {
-        user: userServise.getUserSafeInfo(user),
+        user: new UserDTO(user),
         ...tokens,
       }
     } catch (e) {
