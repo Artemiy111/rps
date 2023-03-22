@@ -1,7 +1,7 @@
 import type { GameRoundData } from '~/types'
 
 import { GameWs } from '~/server/services/gameWs.service'
-import { UserDTO } from '~/server/dtos/UserDTO'
+import { UserDTO } from '~/server/dtos/user.dto'
 
 export class GameDTO {
   public id: string = ''

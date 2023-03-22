@@ -53,7 +53,11 @@
       </div>
     </div>
 
-    <GameEmojiBar @select="sendMessage($event)" />
+    <GameEmojiBar
+      class="transition-opacity"
+      :class="[gameStatus === 'end' ? ' opacity-0' : 'opacity-100']"
+      @select="sendMessage($event)"
+    />
     <GameEmojiShow ref="gameEmojiShow" />
   </div>
 </template>
@@ -65,6 +69,7 @@ import GameEmojiBar from '~/components/GameEmojiBar.vue'
 import GameEmojiShow from '~/components/GameEmojiShow.vue'
 
 import {
+  GameCardWithNull as CardWithNull,
   GameCard as Card,
   GameEmoji,
   GameMessageFromApi,
@@ -95,8 +100,8 @@ const isBreakBetweenRounds = ref(false)
 
 type Round = {
   order: number
-  playerCard: Card
-  enemyCard: Card
+  playerCard: Card | null
+  enemyCard: Card | null
   winnerCard: Card | null
   winnerId: string | null
 }
@@ -116,16 +121,16 @@ const getScore = (player: Ref<UserDTO | null>) => {
 const player = computed(() => userStore.user)
 const playerScore = getScore(player)
 
-const isCardSelected = (card: Card) => card === currentCard.value
+const isCardSelected = (card: CardWithNull) => card === currentCard.value
 const isPlayerSelected = computed(() => currentCard.value !== null)
 const isEnemySelected = computed(() => enemyCard.value !== null)
 const isCardSelectable = computed(() => gameStatus.value !== 'end' && !isBreakBetweenRounds.value)
 
 const socket = ref<WebSocket | null>(null)
-const currentCard = ref<Card>(null)
+const currentCard = ref<CardWithNull>(null)
 
 const enemy = ref<UserDTO | null>(null)
-const enemyCard = ref<Card>(null)
+const enemyCard = ref<CardWithNull>(null)
 const enemyScore = getScore(enemy)
 
 const gameEmojiShow = ref<InstanceType<typeof GameEmojiShow> | null>(null)
@@ -150,18 +155,14 @@ watchEffect(() => {
   else if (!isPlayerSelected.value && isEnemySelected.value) gameStatus.value = 'waitingPlayerMove'
 })
 
-const randomNumber = (min: number, max: number) => {
-  return Math.random() * (max - min) + min
-}
-
-const selectCard = (card: Card) => {
+const selectCard = (card: CardWithNull) => {
   if (card === currentCard.value) return
   currentCard.value = card
   sendMessage()
 }
 
 const sendMessage = (emoji?: GameEmoji) => {
-  if (!player.value || !socket.value) return
+  if (!player.value || !socket.value || gameStatus.value === 'end') return
   const message: GameMessageFromClient = {
     initial: !gameInitialized.value,
     game: {
@@ -211,13 +212,15 @@ const onSocketMessage = (event: MessageEvent) => {
     enemy.value = gameEnemy
   }
   if (enemy.value) {
-    rounds.value = message.game.rounds.map(round => ({
-      order: round.order,
-      winnerId: round.winnerId,
-      winnerCard: round.winnerCard,
-      playerCard: round.players.find(p => p.id === player.value!.id)!.card || null,
-      enemyCard: round.players.find(p => p.id === gameEnemy!.id)!.card || null,
-    }))
+    rounds.value = message.game.rounds.map(round => {
+      return {
+        order: round.order,
+        winnerId: round.winnerId,
+        winnerCard: round.winnerCard,
+        playerCard: round.players.find(p => p.id === player.value!.id)!.card || null,
+        enemyCard: round.players.find(p => p.id === gameEnemy!.id)!.card || null,
+      }
+    })
   }
 
   if (isGameMessageFromApiEnded(message)) {
@@ -263,6 +266,7 @@ const onSocketClose = (event: CloseEvent) => {
   } else {
     console.log('[cls]')
   }
+  if (gameStatus.value === 'end') return
   socket.value = null
   gameStatus.value = 'disconnection'
 }

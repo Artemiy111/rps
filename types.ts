@@ -1,7 +1,11 @@
-import type { User, UserToken as Token, Game, GameRound } from '@prisma/client'
+import type { User, UserToken as Token, Game, GameRound, GameRoundPlayer } from '@prisma/client'
 export type { User, Token, Game, GameRound }
 
-export type UserDTO = Omit<User, 'password'>
+import { GameDTO as GameFromApi } from '~/server/dtos/game.dto'
+import { UserDTO as UserFromApi } from '~/server/dtos/user.dto'
+
+export type UserDTO = UserFromApi
+export type GameDTO = GameFromApi
 
 export type UserApiData = {
   user: UserDTO
@@ -9,7 +13,8 @@ export type UserApiData = {
   refreshToken: string
 }
 
-export type GameCard = 'rock' | 'paper' | 'scissors' | null
+export type GameCardWithNull = 'rock' | 'paper' | 'scissors' | null
+export type GameCard = 'rock' | 'paper' | 'scissors'
 export type GameEmoji = '😎' | '👺' | '🤓' | '🏳️‍🌈'
 
 export type GameMessageFromClient = {
@@ -17,7 +22,7 @@ export type GameMessageFromClient = {
   game: {
     id: string
   }
-  sender: { user: UserDTO; card: GameCard; emoji?: GameEmoji }
+  sender: { user: UserDTO; card: GameCardWithNull; emoji?: GameEmoji }
 }
 
 export interface GameMessageFromApiBase {
@@ -54,7 +59,7 @@ export interface GameMessageFromApiContinues extends GameMessageFromApiBase {
     players: UserDTO[]
     rounds: GameRoundData[]
   }
-  sender: { user: UserDTO; connected: boolean; card: GameCard; emoji?: GameEmoji }
+  sender: { user: UserDTO; connected: boolean; card: GameCardWithNull; emoji?: GameEmoji }
 }
 
 export type GameMessageFromApi =
@@ -79,12 +84,19 @@ export const isGameMessageFromApiContinues = (
 export type GameRoundData = {
   order: number
   winnerId: string | null
-  winnerCard: GameCard | null
+  winnerCard: GameCardWithNull | null
   players: {
     id: string
-    card: GameCard
+    card: GameCardWithNull
   }[]
   breakBetweenRoundsEndsIn: number
+}
+
+type GameRoundWithPlayers = GameRound & { players: GameRoundPlayer[] }
+
+export type GameFromDBWithPlayersAndRounds = Game & {
+  players: User[]
+  rounds: GameRoundWithPlayers[]
 }
 
 export type GameStatus = GameStatusWaiting | GameRoundStatus | 'timer' | 'end' | 'disconnection'

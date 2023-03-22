@@ -1,9 +1,10 @@
+import { gameService } from './../services/game.service'
 import { WebSocketServer, WebSocket, RawData } from 'ws'
 
 import { gameWsService, GameWs, GameWsSender, PlayerWs } from '~/server/services/gameWs.service'
 
 export default defineNitroPlugin(async () => {
-  await gameWsService.loadGames()
+  // await gameWsService.loadGames()
   const wss = new WebSocketServer({ port: 4000, path: '/api/game/ws' })
   wss.on('connection', onSocketConnection)
 })
@@ -12,19 +13,29 @@ const onSocketConnection = (ws: WebSocket) => {
   const socketId = gameWsService.generateSocketId()
   console.log(`.\n[con ws] ${socketId}`)
 
-  // gameWsService.addSocket(socketId, ws)
   ws.on('message', onSocketMessage(ws, socketId))
   ws.on('close', onSocketClose(socketId))
 }
 
 const onSocketMessage = (ws: WebSocket, socketId: string) => {
-  return (event: RawData) => {
+  return async (event: RawData) => {
     console.log(`[get ws] ${socketId}`)
 
     const message = GameWsSender.parseMessage(event)
     const isInitialSocketMessage = message.initial
 
-    if (!gameWsService.getGame(message.game.id)) gameWsService.addGame(message.game.id)
+    const gameFromDB = await gameService.findGame(message.game.id)
+    if (gameFromDB) {
+      const game = new GameWs(gameFromDB.id)
+      game.fillFromGameFromDB(gameFromDB)
+      console.log('IN DB')
+      const gameSender = new GameWsSender(game)
+      gameSender.sendBaseMessageToCurrentSocket(socketId, ws)
+      ws.close()
+      return
+    }
+
+    if (!gameWsService.getGame(message.game.id)) gameWsService.addGame(new GameWs(message.game.id))
 
     const game = gameWsService.getGame(message.game.id)!
     const gameSender = new GameWsSender(game)
@@ -62,7 +73,11 @@ const onSocketMessage = (ws: WebSocket, socketId: string) => {
         const isGameEnd = (game: GameWs) => game.rounds.length === 5
         if (isGameEnd(game)) {
           game.setEndedStatus()
+          gameService.createGameFromGameWs(game)
+
           gameSender.sendPlayerMessageToAllGameSockets(player.id)
+          player.closeAllSockets()
+          enemy.closeAllSockets()
           return
         }
 
@@ -91,11 +106,13 @@ const onSocketClose = (socketId: string) => {
   return () => {
     const { player, enemy, game } = gameWsService.getGameInfoFromSocketId(socketId)
 
-    if (!game) throw new Error('No such game')
+    if (!game) return
     if (!player) throw new Error('No such player')
 
     player.removeSocket(socketId)
     console.log(`[del] ws ${socketId}`)
+
+    if (game.ended) return
 
     if (enemy && !player.isConnected) {
       const gameSender = new GameWsSender(game)

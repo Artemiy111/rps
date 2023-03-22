@@ -6,7 +6,7 @@ import { userServise } from './user.service'
 import { tokenService } from './token.service'
 
 import { ApiError } from '~/server/errors/ApiError'
-import { UserDTO } from '~~/server/dtos/UserDTO'
+import { UserDTO } from '~/server/dtos/user.dto'
 
 class AuthService {
   async login(data: { username: string; password: string }): Promise<UserApiData> {

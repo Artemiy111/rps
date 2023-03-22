@@ -4,7 +4,7 @@ import { useValidatedBody } from 'h3-zod'
 
 import { ApiError } from '~/server/errors/ApiError'
 
-import { signupSchema, loginSchema } from '~~/schema/auth.schema'
+import { signupSchema, loginSchema } from '~/schema/auth.schema'
 
 import { authService } from '~/server/services/auth.service'
 

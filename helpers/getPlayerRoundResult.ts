@@ -1,8 +1,8 @@
-import type { GameCard, GameRoundStatus } from '~/types'
+import type { GameCardWithNull, GameRoundStatus } from '~/types'
 
 export const getPlayerRoundResult = (
-  playerCard: GameCard,
-  enemyCard: GameCard
+  playerCard: GameCardWithNull,
+  enemyCard: GameCardWithNull
 ): GameRoundStatus => {
   switch (playerCard) {
     case null:

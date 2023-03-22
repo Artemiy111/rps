@@ -1,5 +1,5 @@
 import {
-  GameCard,
+  GameCardWithNull,
   GameMessageFromClient,
   GameMessageFromApi,
   GameMessageFromApiBase,
@@ -9,13 +9,13 @@ import {
   isGameMessageFromApiContinues,
   isGameMessageFromApiEnded,
   GameEmoji,
+  GameFromDBWithPlayersAndRounds,
 } from '~/types'
 
 import { v4 as uuid } from 'uuid'
 import { RawData, WebSocket } from 'ws'
 
 import { getPlayerRoundResult } from '~/server/helpers/getPlayerRoundResult'
-import { gameService } from './game.service'
 
 type SocketId = string
 type GameId = string
@@ -31,18 +31,18 @@ class GameWsService {
     return this._games
   }
 
-  async loadGames() {
-    const gamesResponce = await gameService.getAllGames()
-    for (const game of gamesResponce) {
-      const newGame = new GameWs(game.id)
-      if (game.startedAt) newGame.setStartedStatus(game.startedAt)
-      if (game.endedAt) newGame.setEndedStatus(game.endedAt)
+  // async loadGames() {
+  //   const gamesResponce = await gameService.getAllGames()
+  //   for (const game of gamesResponce) {
+  //     const newGame = new GameWs(game.id)
+  //     if (game.startedAt) newGame.setStartedStatus(game.startedAt)
+  //     if (game.endedAt) newGame.setEndedStatus(game.endedAt)
 
-      if (game.players.length === 2)
-        // newGame.addPlayer(new PlayerWs(game.players[0].id, game.players[0].name))
-        this.games.set(game.id, newGame)
-    }
-  }
+  //     if (game.players.length === 2)
+  //       // newGame.addPlayer(new PlayerWs(game.players[0].id, game.players[0].name))
+  //       this.games.set(game.id, newGame)
+  //   }
+  // }
 
   hasGame(gameId: string): boolean {
     return this._games.has(gameId)
@@ -52,11 +52,9 @@ class GameWsService {
     return this._games.get(gameId) || null
   }
 
-  addGame(gameId: string): GameWs {
-    if (this.hasGame(gameId)) throw new Error(`Game with id: ${gameId} is already exicts`)
-    const newGame = new GameWs(gameId)
-    this._games.set(gameId, newGame)
-    return newGame
+  addGame(gameWs: GameWs) {
+    if (this.hasGame(gameWs.id)) throw new Error(`Game with id: ${gameWs.id} is already exicts`)
+    this._games.set(gameWs.id, gameWs)
   }
 
   getGameInfoFromSocketId(socketId: SocketId): {
@@ -281,11 +279,30 @@ export class GameWs {
     this._ended = true
     this._endedAt = endedAt
   }
+
+  fillFromGameFromDB(game: GameFromDBWithPlayersAndRounds) {
+    this.setStartedStatus(game.startedAt!)
+    this.setEndedStatus(game.endedAt!)
+
+    const player1 = new PlayerWs(game.players[0].id, game.players[0].name)
+    const player2 = new PlayerWs(game.players[1].id, game.players[1].name)
+
+    this.addPlayer(player1)
+    this.addPlayer(player2)
+
+    this.rounds = game.rounds.map(r => ({
+      order: r.order,
+      winnerId: r.winnerId,
+      winnerCard: r.winnerCard,
+      breakBetweenRoundsEndsIn: Date.now(),
+      players: r.players.map(p => ({ id: p.userId, card: p.card })),
+    }))
+  }
 }
 
 export class PlayerWs {
   public sockets: Map<SocketId, WebSocket> = new Map()
-  public currentCard: GameCard = null
+  public currentCard: GameCardWithNull = null
   private _isConnected: boolean = false
 
   constructor(public id: string, public name: string) {}
@@ -318,8 +335,8 @@ export class PlayerWs {
     if (this.sockets.size === 0) this._isConnected = false
   }
 
-  removeAllSockets() {
-    this.sockets.clear()
+  closeAllSockets() {
+    this.sockets.forEach(ws => ws.close())
     this._isConnected = false
   }
 }
