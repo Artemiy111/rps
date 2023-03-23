@@ -2,21 +2,27 @@
   <section>
     <h2 class="mb-8 font-bold">{{ t('lastMatches') }}</h2>
     <div class="grid grid-cols-4 gap-x-5 gap-y-8 md:grid-cols-3">
-      <PastMatchesMatch
-        v-for="i in 6"
-        :key="i"
-        player1-name="зелибобик000"
-        :player1-score="2"
-        player2-name="123456789000"
-        :player2-score="3"
-      />
+      <PastMatchesMatch v-for="game in pastGamesSortedByTimeEnded" :key="game.id" :game="game" />
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import PastMatchesMatch from './PastMatchesMatch.vue'
+
+import type { GameDTO } from '~/types'
+
+const props = defineProps<{
+  pastGames: GameDTO[]
+}>()
+
 const { t } = useI18n()
+
+const pastGamesSortedByTimeEnded = computed(() => {
+  return [...props.pastGames].sort(
+    (g1, g2) => new Date(g2.endedAt!).getTime() - new Date(g1.endedAt!).getTime()
+  )
+})
 </script>
 
 <i18n lang="json">

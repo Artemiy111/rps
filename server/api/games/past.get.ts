@@ -1,3 +1,3 @@
 import { gameController } from '~/server/controllers/games.controller'
 
-export default gameController.getAllCurrent()
+export default gameController.getAllPast()

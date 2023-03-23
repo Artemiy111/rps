@@ -69,7 +69,6 @@ import GameEmojiBar from '~/components/GameEmojiBar.vue'
 import GameEmojiShow from '~/components/GameEmojiShow.vue'
 
 import {
-  GameCardWithNull as CardWithNull,
   GameCard as Card,
   GameEmoji,
   GameMessageFromApi,
@@ -80,7 +79,7 @@ import {
   isGameMessageFromApiContinues,
 } from '~/types'
 
-import { useUserStore } from '~~/stores/user.store.js'
+import { useUserStore } from '~/stores/user.store.js'
 import { getPlayerRoundResult } from '~/helpers/getPlayerRoundResult.js'
 
 definePageMeta({
@@ -121,16 +120,16 @@ const getScore = (player: Ref<UserDTO | null>) => {
 const player = computed(() => userStore.user)
 const playerScore = getScore(player)
 
-const isCardSelected = (card: CardWithNull) => card === currentCard.value
+const isCardSelected = (card: Card | null) => card === currentCard.value
 const isPlayerSelected = computed(() => currentCard.value !== null)
 const isEnemySelected = computed(() => enemyCard.value !== null)
 const isCardSelectable = computed(() => gameStatus.value !== 'end' && !isBreakBetweenRounds.value)
 
 const socket = ref<WebSocket | null>(null)
-const currentCard = ref<CardWithNull>(null)
+const currentCard = ref<Card | null>(null)
 
 const enemy = ref<UserDTO | null>(null)
-const enemyCard = ref<CardWithNull>(null)
+const enemyCard = ref<Card | null>(null)
 const enemyScore = getScore(enemy)
 
 const gameEmojiShow = ref<InstanceType<typeof GameEmojiShow> | null>(null)
@@ -155,7 +154,7 @@ watchEffect(() => {
   else if (!isPlayerSelected.value && isEnemySelected.value) gameStatus.value = 'waitingPlayerMove'
 })
 
-const selectCard = (card: CardWithNull) => {
+const selectCard = (card: Card | null) => {
   if (card === currentCard.value) return
   currentCard.value = card
   sendMessage()

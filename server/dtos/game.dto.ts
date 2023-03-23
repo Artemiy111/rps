@@ -1,4 +1,4 @@
-import type { GameRoundData } from '~/types'
+import type { GameFromDBWithPlayersAndRounds, GameRoundData } from '~/types'
 
 import { GameWs } from '~/server/services/gameWs.service'
 import { UserDTO } from '~/server/dtos/user.dto'
@@ -13,14 +13,24 @@ export class GameDTO {
   public players: UserDTO[] = []
   public rounds: GameRoundData[] = []
 
-  constructor(gameWs: GameWs) {
-    this.id = gameWs.id
-    this.createdAt = gameWs.createdAt.toISOString()
-    this.started = gameWs.started
-    this.startedAt = gameWs.startedAt?.toISOString() || null
-    this.ended = gameWs.ended
-    this.endedAt = gameWs.endedAt?.toISOString() || null
-    this.players = gameWs.players.map(p => ({ id: p.id, name: p.name }))
-    this.rounds = gameWs.rounds
+  constructor(game: GameWs | GameFromDBWithPlayersAndRounds) {
+    this.id = game.id
+    this.createdAt = game.createdAt.toISOString()
+    this.started = game.startedAt === null ? false : true
+    this.startedAt = game.startedAt?.toISOString() || null
+    this.ended = game.endedAt === null ? false : true
+    this.endedAt = game.endedAt?.toISOString() || null
+    this.players = game.players.map(p => ({ id: p.id, name: p.name }))
+    if (game instanceof GameWs) {
+      this.rounds = game.rounds
+    } else {
+      this.rounds = game.rounds.map(r => ({
+        order: r.order,
+        winnerId: r.winnerId,
+        winnerCard: r.winnerCard,
+        breakBetweenRoundsEndsIn: Date.now(),
+        players: r.players.map(p => ({ id: p.userId, card: p.card })),
+      }))
+    }
   }
 }

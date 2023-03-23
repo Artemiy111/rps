@@ -78,6 +78,7 @@ const onSocketMessage = (ws: WebSocket, socketId: string) => {
           gameSender.sendPlayerMessageToAllGameSockets(player.id)
           player.closeAllSockets()
           enemy.closeAllSockets()
+          gameWsService.removeGame(game.id)
           return
         }
 
@@ -113,6 +114,10 @@ const onSocketClose = (socketId: string) => {
     console.log(`[del] ws ${socketId}`)
 
     if (game.ended) return
+
+    if (game.isEmpty) {
+      gameWsService.removeGame(game.id)
+    }
 
     if (enemy && !player.isConnected) {
       const gameSender = new GameWsSender(game)

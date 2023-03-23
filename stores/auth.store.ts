@@ -1,4 +1,4 @@
-import type { UserDTO, UserApiData, Token } from '~/types'
+import type { UserWithTokensFromApi, Token } from '~/types'
 
 import { defineStore } from 'pinia'
 
@@ -9,15 +9,15 @@ import { useUserStore } from './user.store'
 export const useAuthStore = defineStore('auth', () => {
   const userStore = useUserStore()
   const isAuth = ref(false)
+
   const setAccessToken = (token: string) => {
     localStorage.setItem('access-token', token)
   }
-
   const removeAccessToken = () => {
     localStorage.removeItem('access-token')
   }
 
-  const login = async (username: string, password: string): Promise<UserApiData> => {
+  const login = async (username: string, password: string): Promise<UserWithTokensFromApi> => {
     const userData = await authApi.login({ username, password })
     userStore.user = userData.user
     isAuth.value = true
@@ -29,7 +29,7 @@ export const useAuthStore = defineStore('auth', () => {
     username: string,
     password: string,
     repeatPassword: string
-  ): Promise<UserApiData> => {
+  ): Promise<UserWithTokensFromApi> => {
     const userData = await authApi.signup({
       username,
       password,
@@ -38,7 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
     return userData
   }
 
-  const refresh = async (): Promise<UserApiData> => {
+  const refresh = async (): Promise<UserWithTokensFromApi> => {
     const userData = await authApi.refresh()
     userStore.user = userData.user
     isAuth.value = true

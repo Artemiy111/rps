@@ -1,8 +1,13 @@
+import type { FetchOptions, FetchError } from 'ofetch'
 import { ofetch } from 'ofetch'
+import type { NitroFetchRequest } from 'nitropack'
 
-export const api = ofetch.create({
-  onRequest({ options }) {
+import { authApi } from './authApi'
+
+const fetcher = ofetch.create({
+  async onRequest({ options }) {
     const accessToken = localStorage.getItem('access-token')
+
     if (accessToken) {
       options.headers = {
         ...options.headers,
@@ -10,12 +15,30 @@ export const api = ofetch.create({
       }
     }
   },
-
   async onResponse({ request, response }) {
     if (response.status === 401 && request !== '/api/auth/refresh') {
-      const userData = await api('/api/auth/refresh')
-      localStorage.setItem('access-token', userData.accessToken)
+      try {
+        const { accessToken } = await authApi.refresh()
+        localStorage.setItem('access-token', accessToken)
+      } catch (e) {
+        const localePath = useLocalePath()
+        console.log('Redirect to login')
+        navigateTo(localePath('/login'))
+      }
     }
   },
 })
-//TODO сделать рабочий интерсептор
+
+export const api = async <T>(request: NitroFetchRequest, options?: FetchOptions) => {
+  try {
+    const response = await fetcher(request, options)
+    return response as T
+  } catch (_error) {
+    const error = _error as FetchError
+    if (error.statusCode === 401) {
+      const response = await fetcher(request, options)
+      return response as T
+    }
+    throw error
+  }
+}

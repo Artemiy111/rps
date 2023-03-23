@@ -1,4 +1,4 @@
-import type { UserApiData, Token } from '~/types'
+import type { UserWithTokensFromApi, Token } from '~/types'
 
 import bcrypt from 'bcrypt'
 
@@ -9,7 +9,7 @@ import { ApiError } from '~/server/errors/ApiError'
 import { UserDTO } from '~/server/dtos/user.dto'
 
 class AuthService {
-  async login(data: { username: string; password: string }): Promise<UserApiData> {
+  async login(data: { username: string; password: string }): Promise<UserWithTokensFromApi> {
     try {
       const user = await userServise.findByName(data.username)
       if (!user) throw ApiError.BadRequest('Username or password is invalid')
@@ -30,7 +30,7 @@ class AuthService {
     }
   }
 
-  async signup(data: { username: string; password: string }): Promise<UserApiData> {
+  async signup(data: { username: string; password: string }): Promise<UserWithTokensFromApi> {
     try {
       const existingUser = await userServise.findByName(data.username)
 
@@ -58,7 +58,7 @@ class AuthService {
     const deletedToken = await tokenService.deleteRefreshTokenByUserId(userData.id)
     return deletedToken
   }
-  async refresh(refreshToken: string): Promise<UserApiData> {
+  async refresh(refreshToken: string): Promise<UserWithTokensFromApi> {
     const verifiedUserData = tokenService.verifyRefreshToken(refreshToken)
     if (!verifiedUserData) throw ApiError.UnauthorizedError()
 

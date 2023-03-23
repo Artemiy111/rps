@@ -7,13 +7,12 @@ import { UserDTO as UserFromApi } from '~/server/dtos/user.dto'
 export type UserDTO = UserFromApi
 export type GameDTO = GameFromApi
 
-export type UserApiData = {
+export type UserWithTokensFromApi = {
   user: UserDTO
   accessToken: string
   refreshToken: string
 }
 
-export type GameCardWithNull = 'rock' | 'paper' | 'scissors' | null
 export type GameCard = 'rock' | 'paper' | 'scissors'
 export type GameEmoji = '😎' | '👺' | '🤓' | '🏳️‍🌈'
 
@@ -22,7 +21,7 @@ export type GameMessageFromClient = {
   game: {
     id: string
   }
-  sender: { user: UserDTO; card: GameCardWithNull; emoji?: GameEmoji }
+  sender: { user: UserDTO; card: GameCard | null; emoji?: GameEmoji }
 }
 
 export interface GameMessageFromApiBase {
@@ -59,7 +58,7 @@ export interface GameMessageFromApiContinues extends GameMessageFromApiBase {
     players: UserDTO[]
     rounds: GameRoundData[]
   }
-  sender: { user: UserDTO; connected: boolean; card: GameCardWithNull; emoji?: GameEmoji }
+  sender: { user: UserDTO; connected: boolean; card: GameCard | null; emoji?: GameEmoji }
 }
 
 export type GameMessageFromApi =
@@ -84,10 +83,10 @@ export const isGameMessageFromApiContinues = (
 export type GameRoundData = {
   order: number
   winnerId: string | null
-  winnerCard: GameCardWithNull | null
+  winnerCard: GameCard | null
   players: {
     id: string
-    card: GameCardWithNull
+    card: GameCard | null
   }[]
   breakBetweenRoundsEndsIn: number
 }

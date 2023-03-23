@@ -1,4 +1,4 @@
-import type { UserApiData, Token } from '~/types'
+import type { UserWithTokensFromApi, Token } from '~/types'
 
 import { useValidatedBody } from 'h3-zod'
 
@@ -12,7 +12,7 @@ const ONE_MONTH_IN_MS = 1000 * 60 * 60 * 30
 
 class AuthController {
   signup() {
-    return defineEventHandler(async (event): Promise<UserApiData> => {
+    return defineEventHandler(async (event): Promise<UserWithTokensFromApi> => {
       const body = await useValidatedBody(event, signupSchema)
 
       const userData = await authService.signup(body)
@@ -27,7 +27,7 @@ class AuthController {
   }
 
   login() {
-    return defineEventHandler(async (event): Promise<UserApiData> => {
+    return defineEventHandler(async (event): Promise<UserWithTokensFromApi> => {
       const body = await useValidatedBody(event, loginSchema)
 
       const userData = await authService.login(body)
@@ -42,7 +42,7 @@ class AuthController {
   }
 
   refresh() {
-    return defineEventHandler(async (event): Promise<UserApiData> => {
+    return defineEventHandler(async (event): Promise<UserWithTokensFromApi> => {
       const refreshToken = getCookie(event, 'refreshToken')
       if (refreshToken === undefined) throw ApiError.UnauthorizedError()
 
