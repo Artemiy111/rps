@@ -1,7 +1,7 @@
 import type { GameFromDBWithPlayersAndRounds, GameRoundData } from '~/types'
 
-import { GameWs } from '~/server/services/gameWs.service'
-import { UserDTO } from '~/server/dtos/user.dto'
+import { GameWs } from '../models/GameWs'
+import { UserDTO } from './user.dto'
 
 export class GameDTO {
   public id: string = ''

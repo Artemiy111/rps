@@ -1,10 +1,13 @@
-import { gameService } from './../services/game.service'
 import { WebSocketServer, WebSocket, RawData } from 'ws'
 
-import { gameWsService, GameWs, GameWsSender, PlayerWs } from '~/server/services/gameWs.service'
+import { GameWs } from '../models/GameWs'
+import { GameWsSender } from '../models/GameWsSender'
+import { PlayerWs } from '../models/PlayerWs'
+
+import { gameService } from '../services/game.service'
+import { gameWsService } from '../services/gameWs.service'
 
 export default defineNitroPlugin(async () => {
-  // await gameWsService.loadGames()
   const wss = new WebSocketServer({ port: 4000, path: '/api/game/ws' })
   wss.on('connection', onSocketConnection)
 })
@@ -126,3 +129,4 @@ const onSocketClose = (socketId: string) => {
     }
   }
 }
+// !FIXME не удаляется игра после выхода всех игроков
