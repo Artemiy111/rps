@@ -17,7 +17,7 @@
 <script setup lang="ts">
 import type { GameEmoji } from '~/types'
 
-const emojis: GameEmoji[] = ['😎', '👺', '🤓', '🏳️‍🌈']
+const emojis: GameEmoji[] = ['😎', '👺', '🤓']
 
 const emit = defineEmits<{
   (e: 'select', emoji: GameEmoji): void

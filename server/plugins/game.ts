@@ -23,7 +23,6 @@ const onSocketConnection = (ws: WebSocket) => {
 const onSocketMessage = (ws: WebSocket, socketId: string) => {
   return async (event: RawData) => {
     console.log(`[get ws] ${socketId}`)
-
     const message = GameWsSender.parseMessage(event)
     const isInitialSocketMessage = message.initial
 
@@ -110,23 +109,20 @@ const onSocketClose = (socketId: string) => {
   return () => {
     const { player, enemy, game } = gameWsService.getGameInfoFromSocketId(socketId)
 
-    if (!game) return
+    if (!game || game.ended) return
     if (!player) throw new Error('No such player')
 
     player.removeSocket(socketId)
     console.log(`[del] ws ${socketId}`)
-
-    if (game.ended) return
-
-    if (game.isEmpty) {
-      gameWsService.removeGame(game.id)
-    }
 
     if (enemy && !player.isConnected) {
       const gameSender = new GameWsSender(game)
       gameSender.sendPlayerMessageToEnemy(player.id, enemy.id)
       return
     }
+
+    if (game.areAllPlayersDisconnected) {
+      gameWsService.removeGame(game.id)
+    }
   }
 }
-// !FIXME не удаляется игра после выхода всех игроков

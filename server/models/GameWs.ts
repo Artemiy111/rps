@@ -10,7 +10,7 @@ export class GameWs {
   private _ended: boolean = false
   private _endedAt: Date | null = null
   private _players: PlayerWs[] = []
-  public rounds: GameRoundData[] = []
+  private _rounds: GameRoundData[] = []
 
   constructor(public id: string) {}
 
@@ -29,14 +29,23 @@ export class GameWs {
   get players(): PlayerWs[] {
     return this._players
   }
-  get isFilled() {
+  get rounds(): GameRoundData[] {
+    return this._rounds
+  }
+  get isFilled(): boolean {
     return this.players.length === 2
   }
-  get isEmpty() {
+  get isEmpty(): boolean {
     return this.players.length === 0
   }
   get isBreakBetweenRounds() {
-    return this.rounds.length !== 0 && this.rounds.at(-1)!.breakBetweenRoundsEndsIn - Date.now() > 0
+    return (
+      this._rounds.length !== 0 && this._rounds.at(-1)!.breakBetweenRoundsEndsIn - Date.now() > 0
+    )
+  }
+
+  get areAllPlayersDisconnected(): boolean {
+    return this.isEmpty || this._players.some(player => !player.isConnected)
   }
 
   addRound(breakBetweenRoundsEndsIn: number = Date.now() + 1500): number {
@@ -47,7 +56,7 @@ export class GameWs {
     const player2 = this.players[1]
     const player1RoundResult = getPlayerRoundResult(player1.currentCard, player2.currentCard)
     const newRound: GameRoundData = {
-      order: this.rounds.length + 1,
+      order: this._rounds.length + 1,
       players: [
         { id: player1.id, card: player1.currentCard },
         { id: player2.id, card: player2.currentCard },
@@ -66,7 +75,7 @@ export class GameWs {
         newRound.winnerCard = player2.currentCard
         break
     }
-    this.rounds.push(newRound)
+    this._rounds.push(newRound)
     return breakBetweenRoundsEndsIn
   }
 
@@ -106,7 +115,7 @@ export class GameWs {
     this.addPlayer(player1)
     this.addPlayer(player2)
 
-    this.rounds = game.rounds.map(r => ({
+    this._rounds = game.rounds.map(r => ({
       order: r.order,
       winnerId: r.winnerId,
       winnerCard: r.winnerCard,

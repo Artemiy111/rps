@@ -14,7 +14,7 @@ export type UserWithTokensFromApi = {
 }
 
 export type GameCard = 'rock' | 'paper' | 'scissors'
-export type GameEmoji = '😎' | '👺' | '🤓' | '🏳️‍🌈'
+export type GameEmoji = '😎' | '👺' | '🤓'
 
 export type GameMessageFromClient = {
   initial: boolean

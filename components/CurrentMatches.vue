@@ -20,8 +20,6 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-const router = useRouter()
-const localePath = useLocalePath()
 </script>
 
 <i18n lang="json">

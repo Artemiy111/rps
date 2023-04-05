@@ -9,7 +9,7 @@
     <div class="flex items-center gap-8 md:gap-6">
       <div class="flex gap-2.5">
         <span class="whitespace-nowrap text-slate-500">{{ t('online') }}</span
-        ><span>12</span>
+        ><span>{{ usersCount }}</span>
       </div>
       <div class="flex gap-1">
         <button
@@ -59,7 +59,11 @@
 <script setup lang="ts">
 import VButton from '~/components/ui/VButton.vue'
 import { useAuthStore } from '~~/stores/auth.store.js'
-import { useUserStore } from '~~/stores/user.store.js'
+import { useUserStore } from '~/stores/user.store.js'
+
+import type { UserDTO } from '~/types'
+
+import { usersApi } from '~/http/api/usersApi'
 
 const { t, locale, setLocale } = useI18n()
 const localePath = useLocalePath()
@@ -71,6 +75,16 @@ const isLoginPage = computed(() => route.name?.toString().match('login'))
 const isRegistrationPage = computed(() => route.name?.toString().match('signup'))
 
 const logout = async () => await authStore.logout()
+
+const currentUsers = ref<UserDTO[]>([])
+const usersCount = computed(() => currentUsers.value.length)
+const timeoutIdForLoadingUsers = ref<number | null>(null)
+
+const loadActiveUsers = async () => {
+  currentUsers.value = await usersApi.getActiveUsers()
+  timeoutIdForLoadingUsers.value = setTimeout(loadActiveUsers, 2000) as unknown as number
+}
+loadActiveUsers()
 </script>
 
 <i18n lang="json">

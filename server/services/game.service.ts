@@ -1,8 +1,7 @@
 import type { GameCard, GameFromDBWithPlayersAndRounds, User } from '~/types'
 
-import { prisma } from '~/server/db'
-
-import { GameWs } from './gameWs.service'
+import { prisma } from '../db'
+import { GameWs } from '../models/GameWs'
 
 const includeInResponse = {
   players: true,
