@@ -8,6 +8,7 @@ export default defineNuxtConfig({
     jwtAccessSecret: 'jwt access token secret key placeholder',
     jwtRefreshSecret: 'jwt refresh token secret key placeholder',
   },
+  head: { link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.png' }] },
   modules: [
     '@pinia/nuxt',
     '@nuxtjs/i18n',

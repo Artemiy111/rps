@@ -1,18 +1,27 @@
 import type { GameCard } from '~/types'
 
 import { WebSocket } from 'ws'
+import { UserDTO } from '../dtos/user.dto'
 
 type SocketId = string
 
 export class PlayerWs {
-  public sockets: Map<SocketId, WebSocket> = new Map()
+  public readonly id: string
+  public readonly name: string
+  public readonly sockets: Map<SocketId, WebSocket> = new Map()
   public currentCard: GameCard | null = null
   private _isConnected: boolean = false
 
-  constructor(public id: string, public name: string) {}
+  constructor(user: UserDTO) {
+    this.id = user.id
+    this.name = user.name
+  }
 
   get isConnected(): boolean {
     return this._isConnected
+  }
+  setConnected() {
+    this._isConnected = false
   }
 
   get hasCard() {

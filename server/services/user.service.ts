@@ -1,4 +1,4 @@
-import type { User, UserDTO } from '~/types'
+import type { User, UserDTO } from '~~/types'
 
 import bcrypt from 'bcrypt'
 

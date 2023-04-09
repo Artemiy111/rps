@@ -15,11 +15,11 @@
 </template>
 
 <script setup lang="ts">
-import type { GameCardWithNull } from '~/types'
+import type { GameCard } from '~/types/index.js'
 
 const props = withDefaults(
   defineProps<{
-    cardName: GameCardWithNull
+    cardName: GameCard | null
     isSelectable?: boolean
     isSelected?: boolean
   }>(),
@@ -29,7 +29,7 @@ const props = withDefaults(
   }
 )
 const emit = defineEmits<{
-  (e: 'select', cardName: GameCardWithNull): void
+  (e: 'select', cardName: GameCard | null): void
 }>()
 
 const selectCard = () => {

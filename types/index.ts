@@ -1,6 +1,3 @@
-import type { User, UserToken as Token, Game, GameRound, GameRoundPlayer } from '@prisma/client'
-export type { User, Token, Game, GameRound }
-
 import { GameDTO as GameFromApi } from '~/server/dtos/game.dto'
 import { UserDTO as UserFromApi } from '~/server/dtos/user.dto'
 
@@ -32,7 +29,7 @@ export interface GameMessageFromApiBase {
     ended: boolean
     endedAt: number | null
     players: UserDTO[]
-    rounds: GameRoundData[]
+    rounds: GameRound[]
   }
 }
 
@@ -44,7 +41,7 @@ export interface GameMessageFromApiEnded extends GameMessageFromApiBase {
     ended: true
     endedAt: number
     players: UserDTO[]
-    rounds: GameRoundData[]
+    rounds: GameRound[]
   }
 }
 
@@ -56,7 +53,7 @@ export interface GameMessageFromApiContinues extends GameMessageFromApiBase {
     ended: false
     endedAt: null
     players: UserDTO[]
-    rounds: GameRoundData[]
+    rounds: GameRound[]
   }
   sender: { user: UserDTO; connected: boolean; card: GameCard | null; emoji?: GameEmoji }
 }
@@ -80,22 +77,17 @@ export const isGameMessageFromApiContinues = (
   return false
 }
 
-export type GameRoundData = {
+export type GameRound = {
   order: number
   winnerId: string | null
   winnerCard: GameCard | null
-  players: {
-    id: string
-    card: GameCard | null
-  }[]
+  players: GameRoundPlayer[]
   breakBetweenRoundsEndsIn: number
 }
 
-type GameRoundWithPlayers = GameRound & { players: GameRoundPlayer[] }
-
-export type GameFromDBWithPlayersAndRounds = Game & {
-  players: User[]
-  rounds: GameRoundWithPlayers[]
+export type GameRoundPlayer = {
+  id: string
+  card: GameCard | null
 }
 
 export type GameStatus = GameStatusWaiting | GameRoundStatus | 'timer' | 'end' | 'disconnection'

@@ -1,4 +1,4 @@
-import type { UserWithTokensFromApi, Token } from '~/types'
+import type { UserWithTokensFromApi } from '~/types'
 
 import { defineStore } from 'pinia'
 
@@ -46,7 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
     return userData
   }
 
-  const logout = async (): Promise<Token> => {
+  const logout = async () => {
     const token = authApi.logout()
     userStore.user = null
     isAuth.value = false

@@ -1,4 +1,5 @@
-import type { GameCard, GameFromDBWithPlayersAndRounds, User } from '~/types'
+import type { GameCard } from '~/types'
+import type { GameDBWithPlayersAndRounds, UserDb } from '~/types/server'
 
 import { prisma } from '../db'
 import { GameWs } from '../models/GameWs'
@@ -8,8 +9,8 @@ const includeInResponse = {
   rounds: { include: { players: true } },
 }
 
-class GameService {
-  async getAllGames(): Promise<GameFromDBWithPlayersAndRounds[]> {
+class GameDbService {
+  async getAllGames(): Promise<GameDBWithPlayersAndRounds[]> {
     return await prisma.game.findMany({
       include: includeInResponse,
     })
@@ -20,7 +21,7 @@ class GameService {
     return game ? true : false
   }
 
-  async findGame(gameId: string): Promise<GameFromDBWithPlayersAndRounds | null> {
+  async findGame(gameId: string): Promise<GameDBWithPlayersAndRounds | null> {
     return await prisma.game.findUnique({
       where: {
         id: gameId,
@@ -29,7 +30,7 @@ class GameService {
     })
   }
 
-  async findPlayerInGame(gameId: string, playerId: string): Promise<User | null> {
+  async findPlayerInGame(gameId: string, playerId: string): Promise<UserDb | null> {
     return await prisma.user.findFirst({
       where: {
         id: playerId,
@@ -115,7 +116,7 @@ class GameService {
   //   })
   // }
 
-  async createGameFromGameWs(game: GameWs): Promise<GameFromDBWithPlayersAndRounds> {
+  async createGameFromGameWs(game: GameWs): Promise<GameDBWithPlayersAndRounds> {
     await prisma.game.create({
       data: {
         id: game.id,
@@ -160,9 +161,9 @@ class GameService {
         id: game.id,
       },
       include: includeInResponse,
-    })) as GameFromDBWithPlayersAndRounds
+    })) as GameDBWithPlayersAndRounds
     return newGame
   }
 }
 
-export const gameService = new GameService()
+export const gameDbService = new GameDbService()

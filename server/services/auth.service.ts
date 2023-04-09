@@ -1,4 +1,4 @@
-import type { UserWithTokensFromApi, Token } from '~/types'
+import type { UserWithTokensFromApi, Token } from '~~/types'
 
 import bcrypt from 'bcrypt'
 

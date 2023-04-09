@@ -11,6 +11,7 @@ import { isGameMessageFromApiContinues, isGameMessageFromApiEnded } from '~/type
 import { RawData, WebSocket } from 'ws'
 
 import { GameWs } from './GameWs'
+import { UserDTO } from '../dtos/user.dto'
 
 export class GameWsSender {
   constructor(private game: GameWs) {}
@@ -31,7 +32,7 @@ export class GameWsSender {
         startedAt: this.game.startedAt?.getTime() || null,
         ended: this.game.ended,
         endedAt: this.game.endedAt?.getTime() || null,
-        players: this.game.players.map(p => ({ id: p.id, name: p.name })),
+        players: this.game.players.map(playerWs => new UserDTO(playerWs)),
         rounds: this.game.rounds,
       },
     }

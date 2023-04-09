@@ -1,10 +1,11 @@
 import { WebSocketServer, WebSocket, RawData } from 'ws'
 
 import { GameWs } from '../models/GameWs'
+import { GameWsFactory } from '../models/GameWsFactory'
 import { GameWsSender } from '../models/GameWsSender'
 import { PlayerWs } from '../models/PlayerWs'
 
-import { gameService } from '../services/game.service'
+import { gameDbService } from '../services/gameDb.service'
 import { gameWsService } from '../services/gameWs.service'
 
 export default defineNitroPlugin(async () => {
@@ -26,20 +27,22 @@ const onSocketMessage = (ws: WebSocket, socketId: string) => {
     const message = GameWsSender.parseMessage(event)
     const isInitialSocketMessage = message.initial
 
-    const gameFromDB = await gameService.findGame(message.game.id)
-    if (gameFromDB) {
-      const game = new GameWs(gameFromDB.id)
-      game.fillFromGameFromDB(gameFromDB)
-      console.log('IN DB')
+    const gameDb = await gameDbService.findGame(message.game.id)
+    if (gameDb) {
+      const game = GameWsFactory.createFromGameDb(gameDb)
+      console.log('From DB')
       const gameSender = new GameWsSender(game)
       gameSender.sendBaseMessageToCurrentSocket(socketId, ws)
       ws.close()
       return
     }
 
-    if (!gameWsService.getGame(message.game.id)) gameWsService.addGame(new GameWs(message.game.id))
-
-    const game = gameWsService.getGame(message.game.id)!
+    let gameMaybeExisting: GameWs | null = gameWsService.getGame(message.game.id)
+    if (!gameMaybeExisting) {
+      gameMaybeExisting = new GameWs(message.game.id)
+      gameWsService.addGame(gameMaybeExisting)
+    }
+    const game: GameWs = gameMaybeExisting
     const gameSender = new GameWsSender(game)
 
     if (game.ended) return gameSender.sendBaseMessageToCurrentSocket(socketId, ws)
@@ -48,7 +51,7 @@ const onSocketMessage = (ws: WebSocket, socketId: string) => {
       game.players.length === 0 ||
       (game.players.length === 1 && game.players[0].id !== message.sender.user.id)
     ) {
-      const newPlayer = new PlayerWs(message.sender.user.id, message.sender.user.name)
+      const newPlayer = new PlayerWs(message.sender.user)
       newPlayer.addSocket(socketId, ws)
       newPlayer.currentCard = message.sender.card
       game.addPlayer(newPlayer)
@@ -75,7 +78,7 @@ const onSocketMessage = (ws: WebSocket, socketId: string) => {
         const isGameEnd = (game: GameWs) => game.rounds.length === 5
         if (isGameEnd(game)) {
           game.setEndedStatus()
-          gameService.createGameFromGameWs(game)
+          gameDbService.createGameFromGameWs(game)
 
           gameSender.sendPlayerMessageToAllGameSockets(player.id)
           player.closeAllSockets()

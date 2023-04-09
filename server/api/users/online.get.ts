@@ -1,4 +1,4 @@
-import type { UserDTO } from '~/types'
+import type { UserDTO } from '~~/types'
 
 import { gameWsService } from '~/server/services/gameWs.service'
 

@@ -1,4 +1,4 @@
-import type { UserWithTokensFromApi, Token } from '~/types'
+import type { UserWithTokensFromApi } from '~/types'
 
 import { useValidatedBody } from 'h3-zod'
 
@@ -56,7 +56,7 @@ class AuthController {
   }
 
   logout() {
-    return defineEventHandler(async (event): Promise<Token> => {
+    return defineEventHandler(async event => {
       const refreshToken = getCookie(event, 'refreshToken')
       if (refreshToken === undefined) throw ApiError.UnauthorizedError()
 

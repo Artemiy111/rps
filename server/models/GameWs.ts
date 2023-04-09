@@ -1,18 +1,33 @@
-import type { GameFromDBWithPlayersAndRounds, GameRoundData } from '~/types'
+import type { GameRound } from '~/types'
 
 import { getPlayerRoundResult } from '~/server/helpers/getPlayerRoundResult'
 import { PlayerWs } from './PlayerWs'
 
-export class GameWs {
-  public readonly createdAt: Date = new Date()
+interface Game {
+  readonly id: string
+  readonly createdAt: Date
+  readonly started: boolean
+  readonly startedAt: Date | null
+  readonly ended: boolean
+  readonly endedAt: Date | null
+  readonly players: PlayerWs[]
+  readonly rounds: GameRound[]
+}
+
+export class GameWs implements Game {
+  public readonly id: string
+  public readonly createdAt: Date
   private _started: boolean = false
   private _startedAt: Date | null = null
   private _ended: boolean = false
   private _endedAt: Date | null = null
-  private _players: PlayerWs[] = []
-  private _rounds: GameRoundData[] = []
+  public readonly players: PlayerWs[] = []
+  public readonly rounds: GameRound[] = []
 
-  constructor(public id: string) {}
+  constructor(id: string, createdAt?: Date) {
+    this.id = id
+    this.createdAt = createdAt || new Date()
+  }
 
   get started(): boolean {
     return this._started
@@ -26,12 +41,7 @@ export class GameWs {
   get endedAt(): Date | null {
     return this._endedAt
   }
-  get players(): PlayerWs[] {
-    return this._players
-  }
-  get rounds(): GameRoundData[] {
-    return this._rounds
-  }
+
   get isFilled(): boolean {
     return this.players.length === 2
   }
@@ -39,13 +49,11 @@ export class GameWs {
     return this.players.length === 0
   }
   get isBreakBetweenRounds() {
-    return (
-      this._rounds.length !== 0 && this._rounds.at(-1)!.breakBetweenRoundsEndsIn - Date.now() > 0
-    )
+    return this.rounds.length !== 0 && this.rounds.at(-1)!.breakBetweenRoundsEndsIn - Date.now() > 0
   }
 
   get areAllPlayersDisconnected(): boolean {
-    return this.isEmpty || this._players.some(player => !player.isConnected)
+    return this.isEmpty || this.players.some(player => !player.isConnected)
   }
 
   addRound(breakBetweenRoundsEndsIn: number = Date.now() + 1500): number {
@@ -55,8 +63,8 @@ export class GameWs {
     const player1 = this.players[0]
     const player2 = this.players[1]
     const player1RoundResult = getPlayerRoundResult(player1.currentCard, player2.currentCard)
-    const newRound: GameRoundData = {
-      order: this._rounds.length + 1,
+    const newRound: GameRound = {
+      order: this.rounds.length + 1,
       players: [
         { id: player1.id, card: player1.currentCard },
         { id: player2.id, card: player2.currentCard },
@@ -75,7 +83,7 @@ export class GameWs {
         newRound.winnerCard = player2.currentCard
         break
     }
-    this._rounds.push(newRound)
+    this.rounds.push(newRound)
     return breakBetweenRoundsEndsIn
   }
 
@@ -103,24 +111,5 @@ export class GameWs {
   setEndedStatus(endedAt: Date = new Date()) {
     this._ended = true
     this._endedAt = endedAt
-  }
-
-  fillFromGameFromDB(game: GameFromDBWithPlayersAndRounds) {
-    this.setStartedStatus(game.startedAt!)
-    this.setEndedStatus(game.endedAt!)
-
-    const player1 = new PlayerWs(game.players[0].id, game.players[0].name)
-    const player2 = new PlayerWs(game.players[1].id, game.players[1].name)
-
-    this.addPlayer(player1)
-    this.addPlayer(player2)
-
-    this._rounds = game.rounds.map(r => ({
-      order: r.order,
-      winnerId: r.winnerId,
-      winnerCard: r.winnerCard,
-      breakBetweenRoundsEndsIn: Date.now(),
-      players: r.players.map(p => ({ id: p.userId, card: p.card })),
-    }))
   }
 }

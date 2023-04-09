@@ -1,5 +1,5 @@
 import { gameWsService } from '~/server/services/gameWs.service'
-import { gameService } from '~/server/services/game.service'
+import { gameDbService } from '~~/server/services/gameDb.service'
 
 import { GameDTO } from '~/server/dtos/game.dto'
 
@@ -14,7 +14,7 @@ class GameController {
 
   getAllPast() {
     return defineEventHandler(async (event): Promise<GameDTO[]> => {
-      return (await gameService.getAllGames()).map(game => new GameDTO(game))
+      return (await gameDbService.getAllGames()).map(game => new GameDTO(game))
     })
   }
 }

@@ -1,4 +1,5 @@
-import type { UserWithTokensFromApi, Token } from '~/types'
+import type { UserWithTokensFromApi } from '~/types'
+import type { TokenDb } from '~/types/server'
 
 class AuthApi {
   async signup(data: {
@@ -28,7 +29,7 @@ class AuthApi {
     })
   }
 
-  async logout(): Promise<Token> {
+  async logout(): Promise<TokenDb> {
     return await $fetch('/api/auth/logout')
   }
 
