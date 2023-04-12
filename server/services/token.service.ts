@@ -1,5 +1,4 @@
-import type { Token } from '~~/types'
-
+import type { TokenDb } from '~/types/server'
 import jwt from 'jsonwebtoken'
 
 import { prisma } from '~/server/db'
@@ -19,7 +18,7 @@ class TokenService {
     }
   }
 
-  async createOrUpdateRefreshToken(userId: string, refreshToken: string): Promise<Token> {
+  async createOrUpdateRefreshToken(userId: string, refreshToken: string): Promise<TokenDb> {
     const token = await prisma.userToken.upsert({
       where: { userId },
       update: { refresh: refreshToken },
@@ -49,7 +48,7 @@ class TokenService {
     }
   }
 
-  async findRefreshToken(refreshToken: string): Promise<Token | null> {
+  async findRefreshToken(refreshToken: string): Promise<TokenDb | null> {
     const token = await prisma.userToken.findUnique({
       where: {
         refresh: refreshToken,
@@ -58,7 +57,7 @@ class TokenService {
     return token
   }
 
-  async deleteRefreshTokenByUserId(userId: string): Promise<Token> {
+  async deleteRefreshTokenByUserId(userId: string): Promise<TokenDb> {
     const deletedToken = await prisma.userToken.delete({
       where: {
         userId,

@@ -9,7 +9,8 @@ import { gameDbService } from '../services/gameDb.service'
 import { gameWsService } from '../services/gameWs.service'
 
 export default defineNitroPlugin(async () => {
-  const wss = new WebSocketServer({ port: 4000, path: '/api/game/ws' })
+  const config = useRuntimeConfig()
+  const wss = new WebSocketServer({ port: config.gameWsPort, path: config.gameWsPath })
   wss.on('connection', onSocketConnection)
 })
 

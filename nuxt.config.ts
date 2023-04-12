@@ -3,8 +3,16 @@ export default defineNuxtConfig({
   components: false,
 
   runtimeConfig: {
+    public: {
+      clientUrl: '',
+      serverUrl: '',
+      gameWsUrl: '',
+    },
     clientUrl: '',
     serverUrl: '',
+    gameWsUrl: '',
+    gameWsPort: 4000,
+    gameWsPAth: '',
     jwtAccessSecret: 'jwt access token secret key placeholder',
     jwtRefreshSecret: 'jwt refresh token secret key placeholder',
   },

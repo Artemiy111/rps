@@ -1,7 +1,3 @@
-import type { UserDTO } from '~~/types'
+import { usersController } from '~/server/controllers/users.controller'
 
-import { gameWsService } from '~/server/services/gameWs.service'
-
-export default defineEventHandler((event): UserDTO[] => {
-  return gameWsService.getCurrentActiveUsers()
-})
+export default usersController.getActiveUsers()

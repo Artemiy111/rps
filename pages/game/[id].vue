@@ -86,6 +86,7 @@ definePageMeta({
   middleware: 'auth',
 })
 
+const config = useRuntimeConfig()
 const { t } = useI18n()
 const localePath = useLocalePath()
 const userStore = useUserStore()
@@ -183,7 +184,8 @@ const parseMessage = (event: MessageEvent): GameMessageFromApi => {
 }
 
 onMounted(() => {
-  socket.value = new WebSocket('ws://localhost:4000/api/game/ws')
+  console.log(config)
+  socket.value = new WebSocket(config.gameWsUrl)
   socket.value.onopen = onSocketOpen
   socket.value.onmessage = onSocketMessage
   socket.value.onclose = onSocketClose
@@ -202,7 +204,7 @@ const onSocketOpen = (event: Event) => {
 const onSocketMessage = (event: MessageEvent) => {
   if (!player.value) throw new Error('No player')
 
-  const message = parseMessage(event) satisfies GameMessageFromApi
+  const message = parseMessage(event)
 
   const gameEnemy = message.game.players.find(p => p.id !== player.value?.id) || null
 
