@@ -21,8 +21,9 @@ export class GameWs implements Game {
   private _startedAt: Date | null = null
   private _ended: boolean = false
   private _endedAt: Date | null = null
-  public readonly players: PlayerWs[] = []
-  public readonly rounds: GameRound[] = []
+  private _players: PlayerWs[] = []
+
+  private _rounds: GameRound[] = []
 
   constructor(id: string, createdAt?: Date) {
     this.id = id
@@ -41,30 +42,38 @@ export class GameWs implements Game {
   get endedAt(): Date | null {
     return this._endedAt
   }
+  get players() {
+    return [...this._players]
+  }
+  get rounds() {
+    return [...this._rounds]
+  }
 
-  get isFilled(): boolean {
+  isFilled(): boolean {
     return this.players.length === 2
   }
-  get isEmpty(): boolean {
+  isEmpty(): boolean {
     return this.players.length === 0
   }
-  get isBreakBetweenRounds() {
-    return this.rounds.length !== 0 && this.rounds.at(-1)!.breakBetweenRoundsEndsIn - Date.now() > 0
+  isBreakBetweenRounds() {
+    return (
+      this._rounds.length !== 0 && this._rounds.at(-1)!.breakBetweenRoundsEndsIn - Date.now() > 0
+    )
   }
 
-  get areAllPlayersDisconnected(): boolean {
-    return this.isEmpty || this.players.some(player => !player.isConnected)
+  areAllPlayersDisconnected(): boolean {
+    return this.isEmpty() || this._players.every(player => !player.isConnected())
   }
 
   addRound(breakBetweenRoundsEndsIn: number = Date.now() + 1500): number {
-    if (!this.isFilled) {
+    if (!this.isFilled()) {
       throw new Error('Could not add round to not filled game')
     }
     const player1 = this.players[0]
     const player2 = this.players[1]
     const player1RoundResult = getPlayerRoundResult(player1.currentCard, player2.currentCard)
     const newRound: GameRound = {
-      order: this.rounds.length + 1,
+      order: this._rounds.length + 1,
       players: [
         { id: player1.id, card: player1.currentCard },
         { id: player2.id, card: player2.currentCard },
@@ -83,23 +92,23 @@ export class GameWs implements Game {
         newRound.winnerCard = player2.currentCard
         break
     }
-    this.rounds.push(newRound)
+    this._rounds.push(newRound)
     return breakBetweenRoundsEndsIn
   }
 
   getPlayer(playerId: string): PlayerWs | null {
-    return this.players.find(player => player.id === playerId) || null
+    return this._players.find(player => player.id === playerId) || null
   }
 
   getEnemy(playerId: string): PlayerWs | null {
-    return this.players.find(player => player.id !== playerId) || null
+    return this._players.find(player => player.id !== playerId) || null
   }
 
   addPlayer(player: PlayerWs): PlayerWs {
-    if (this.isFilled) {
+    if (this.isFilled()) {
       throw new Error('Could not add player to filled game')
     }
-    this.players.push(player)
+    this._players.push(player)
     return player
   }
 

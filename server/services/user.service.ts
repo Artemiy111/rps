@@ -1,4 +1,4 @@
-import type { User, UserDTO } from '~~/types'
+import type { UserDb } from '~/types/server'
 
 import bcrypt from 'bcrypt'
 
@@ -6,7 +6,7 @@ import { prisma } from '~/server/db'
 import { tokenService } from './token.service'
 
 class UserService {
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string): Promise<UserDb | null> {
     const user = await prisma.user.findUnique({
       where: {
         id,
@@ -15,7 +15,7 @@ class UserService {
     return user
   }
 
-  async findByName(username: string): Promise<User | null> {
+  async findByName(username: string): Promise<UserDb | null> {
     const user = await prisma.user.findUnique({
       where: {
         name: username,
@@ -24,7 +24,7 @@ class UserService {
     return user
   }
 
-  async create(data: { username: string; password: string }): Promise<User> {
+  async create(data: { username: string; password: string }): Promise<UserDb> {
     const saltRounds = 7
     const hashPassword = bcrypt.hashSync(data.password, saltRounds)
 
@@ -37,7 +37,7 @@ class UserService {
     return user
   }
 
-  async deleteById(id: string): Promise<User> {
+  async deleteById(id: string): Promise<UserDb> {
     const deletedUser = await prisma.user.delete({
       where: {
         id,

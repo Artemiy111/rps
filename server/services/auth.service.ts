@@ -1,4 +1,5 @@
-import type { UserWithTokensFromApi, Token } from '~~/types'
+import type { UserWithTokensFromApi } from '~/types'
+import type { TokenDb } from '~/types/server'
 
 import bcrypt from 'bcrypt'
 
@@ -25,7 +26,8 @@ class AuthService {
         ...tokens,
       }
     } catch (e) {
-      if (typeof e === 'object' && e && 'statusCode' in e && (e as any).statusCode === 400) throw e
+      if (isNuxtError(e as any)) throw e
+      //if (typeof e === 'object' && e && 'statusCode' in e && (e as any).statusCode === 400) throw e
       throw ApiError.ServerError('Could not find user')
     }
   }
@@ -46,12 +48,13 @@ class AuthService {
         ...tokens,
       }
     } catch (e) {
-      if (e && typeof e === 'object' && 'statusCode' in e && (e as any).statusCode === 400) throw e
+      if (isNuxtError(e as any)) throw e
+      //if (e && typeof e === 'object' && 'statusCode' in e && (e as any).statusCode === 400) throw e
       throw ApiError.ServerError('Could not create user')
     }
   }
 
-  async logout(refreshToken: string): Promise<Token> {
+  async logout(refreshToken: string): Promise<TokenDb> {
     const userData = tokenService.verifyRefreshToken(refreshToken)
     if (!userData) throw ApiError.UnauthorizedError()
 

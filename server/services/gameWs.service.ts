@@ -61,7 +61,7 @@ class GameWsService {
 
     for (const [_, game] of this._games) {
       game.players.forEach(player => {
-        if (player.isConnected && !players.has(player.id))
+        if (player.isConnected() && !players.has(player.id))
           players.set(player.id, new UserDTO(player))
       })
     }

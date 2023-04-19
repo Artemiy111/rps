@@ -14,7 +14,11 @@ import { GameWs } from './GameWs'
 import { UserDTO } from '../dtos/user.dto'
 
 export class GameWsSender {
-  constructor(private game: GameWs) {}
+  private _game: GameWs
+
+  constructor(game: GameWs) {
+    this._game = game
+  }
 
   static parseMessage(event: RawData): GameMessageFromClient {
     return JSON.parse(event.toString('utf-8')) as GameMessageFromClient
@@ -27,13 +31,13 @@ export class GameWsSender {
   private generateMessageBase(): GameMessageFromApiBase {
     const messageBase: GameMessageFromApiBase = {
       game: {
-        id: this.game.id,
-        started: this.game.started,
-        startedAt: this.game.startedAt?.getTime() || null,
-        ended: this.game.ended,
-        endedAt: this.game.endedAt?.getTime() || null,
-        players: this.game.players.map(playerWs => new UserDTO(playerWs)),
-        rounds: this.game.rounds,
+        id: this._game.id,
+        started: this._game.started,
+        startedAt: this._game.startedAt?.getTime() || null,
+        ended: this._game.ended,
+        endedAt: this._game.endedAt?.getTime() || null,
+        players: this._game.players.map(playerWs => new UserDTO(playerWs)),
+        rounds: this._game.rounds,
       },
     }
     return messageBase
@@ -51,7 +55,7 @@ export class GameWsSender {
     playerId: string,
     emoji?: GameEmoji
   ): GameMessageFromApiContinues | null {
-    const player = this.game.getPlayer(playerId)!
+    const player = this._game.getPlayer(playerId)!
     const messageBase = this.generateMessageBase()
 
     if (!isGameMessageFromApiContinues(messageBase)) return null
@@ -63,7 +67,7 @@ export class GameWsSender {
           id: player.id,
           name: player.name,
         },
-        connected: player.isConnected,
+        connected: player.isConnected(),
         card: player.currentCard,
         emoji: emoji,
       },
@@ -92,7 +96,7 @@ export class GameWsSender {
     const playerMessage = this.generateMessage(playerId)
     console.log(`[init ws] ${socketId}`)
     GameWsSender.sendMessage(ws, playerMessage)
-    console.log(this.game.players.map(p => p.name))
+    console.log(this._game.players.map(p => p.name))
   }
 
   sendEnemyMessageToCurrentSocket(socketId: string, ws: WebSocket, enemyId: string) {
@@ -102,7 +106,7 @@ export class GameWsSender {
   }
 
   sendPlayerMessageToEnemy(playerId: string, enemyId: string) {
-    const enemy = this.game.getPlayer(enemyId)!
+    const enemy = this._game.getPlayer(enemyId)!
     const playerMessage = this.generateMessage(playerId)
     for (const [_, enemySocket] of enemy.sockets) {
       // console.log(`[to enm from] ${enemySocketId}`)
@@ -111,9 +115,9 @@ export class GameWsSender {
   }
 
   sendPlayerMessageToAllGameSockets(playerId: string, emoji?: GameEmoji) {
-    const player = this.game.getPlayer(playerId)!
+    const player = this._game.getPlayer(playerId)!
     const playerMessage = this.generateMessage(playerId, emoji)
-    for (const gamePlayer of this.game.players) {
+    for (const gamePlayer of this._game.players) {
       for (const [gamePlayerSocketId, gamePlayerSocket] of gamePlayer.sockets) {
         console.log(`[to all from] ${player.name} [to ws] ${gamePlayerSocketId}`)
         GameWsSender.sendMessage(gamePlayerSocket, playerMessage)

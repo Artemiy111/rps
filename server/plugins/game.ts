@@ -58,7 +58,7 @@ const onSocketMessage = (ws: WebSocket, socketId: string) => {
       game.addPlayer(newPlayer)
     }
 
-    if (!game.started && game.isFilled) game.setStartedStatus()
+    if (!game.started && game.isFilled()) game.setStartedStatus()
 
     const player = game.getPlayer(message.sender.user.id)
     if (!player) return
@@ -66,11 +66,11 @@ const onSocketMessage = (ws: WebSocket, socketId: string) => {
 
     const enemy = game.getEnemy(message.sender.user.id)
 
-    if (game.isBreakBetweenRounds) return
+    if (game.isBreakBetweenRounds()) return
     console.log(`[round]`)
     if (!isInitialSocketMessage) player.currentCard = message.sender.card
 
-    if (enemy && player.hasCard && enemy.hasCard) {
+    if (enemy && player.hasCard() && enemy.hasCard()) {
       const breakBetweenRoundsEndsIn = game.addRound()
 
       gameSender.sendPlayerMessageToAllGameSockets(player.id)
@@ -119,14 +119,15 @@ const onSocketClose = (socketId: string) => {
     player.removeSocket(socketId)
     console.log(`[del] ws ${socketId}`)
 
-    if (enemy && !player.isConnected) {
+    if (enemy && !player.isConnected()) {
       const gameSender = new GameWsSender(game)
       gameSender.sendPlayerMessageToEnemy(player.id, enemy.id)
       return
     }
 
-    if (game.areAllPlayersDisconnected) {
+    if (game.areAllPlayersDisconnected()) {
       gameWsService.removeGame(game.id)
+      console.log(`[remove game]`)
     }
   }
 }

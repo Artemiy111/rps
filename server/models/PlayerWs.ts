@@ -8,7 +8,7 @@ type SocketId = string
 export class PlayerWs {
   public readonly id: string
   public readonly name: string
-  public readonly sockets: Map<SocketId, WebSocket> = new Map()
+  private _sockets: Map<SocketId, WebSocket> = new Map()
   public currentCard: GameCard | null = null
   private _isConnected: boolean = false
 
@@ -17,39 +17,43 @@ export class PlayerWs {
     this.name = user.name
   }
 
-  get isConnected(): boolean {
+  isConnected(): boolean {
     return this._isConnected
   }
   setConnected() {
     this._isConnected = false
   }
 
-  get hasCard() {
+  hasCard() {
     return this.currentCard !== null
   }
 
+  get sockets() {
+    return [...this._sockets]
+  }
+
   hasSocket(socketId: string): boolean {
-    return this.sockets.has(socketId)
+    return this._sockets.has(socketId)
   }
 
   getSocket(socketId: string): WebSocket | null {
-    return this.sockets.get(socketId) || null
+    return this._sockets.get(socketId) || null
   }
 
   addSocket(socketId: string, ws: WebSocket) {
-    if (this.sockets.has(socketId)) throw new Error(`Socket with id ${socketId} is already exists`)
-    this.sockets.set(socketId, ws)
+    if (this._sockets.has(socketId)) throw new Error(`Socket with id ${socketId} is already exists`)
+    this._sockets.set(socketId, ws)
     if (!this._isConnected) this._isConnected = true
   }
 
   removeSocket(socketId: string) {
-    if (!this.sockets.has(socketId)) throw new Error(`Socket with id ${socketId} is not exists`)
-    this.sockets.delete(socketId)
-    if (this.sockets.size === 0) this._isConnected = false
+    if (!this._sockets.has(socketId)) throw new Error(`Socket with id ${socketId} is not exists`)
+    this._sockets.delete(socketId)
+    if (this._sockets.size === 0) this._isConnected = false
   }
 
   closeAllSockets() {
-    this.sockets.forEach(ws => ws.close())
+    this._sockets.forEach(ws => ws.close())
     this._isConnected = false
   }
 }
