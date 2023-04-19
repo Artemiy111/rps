@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-fit rounded px-6 py-2"
+    class="w-fit rounded px-6 py-2 xs:px-3"
     :class="[
       isWaiting ? 'bg-slate-500 text-slate-50' : '',
       props.gameStatus === 'timer' || props.gameStatus === 'end' ? 'bg-blue-500 text-blue-50' : '',

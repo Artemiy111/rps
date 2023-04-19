@@ -16,6 +16,7 @@ export default <Partial<Config>>{
       },
     },
     fontSize: {
+      xs: ['14px', { lineHeight: '16px' }],
       sm: ['16px', { lineHeight: '18px' }],
       base: [`20px`, { lineHeight: '23px' }],
       md: ['24px', { lineHeight: '28px' }],

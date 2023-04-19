@@ -3,9 +3,11 @@
     <img
       src="~/assets/img/banner.png"
       alt="banner"
-      class="h-auto min-h-[300px] w-full object-cover"
+      class="h-auto min-h-[200px] w-full object-cover"
     />
-    <div class="absolute bottom-16 left-8 flex gap-5">
+    <div
+      class="absolute bottom-16 left-8 flex gap-5 md:bottom-8 sm:bottom-6 sm:left-6 xs:flex-col xs:gap-3"
+    >
       <VButton style-type="primary" size="md">{{ t('quickMatch') }}</VButton>
       <VButton :to="localePath(`/game/${uuid()}`)" size="md">{{ t('createMatch') }}</VButton>
     </div>

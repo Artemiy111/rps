@@ -1,7 +1,9 @@
 <template>
   <section>
     <h2 class="mb-8 font-bold">{{ t('lastMatches') }}</h2>
-    <div class="grid grid-cols-4 gap-x-5 gap-y-8 md:grid-cols-3">
+    <div
+      class="grid grid-cols-4 gap-x-5 gap-y-8 lg:grid-cols-3 md:grid-cols-2 [@media(max-width:500px)]:grid-cols-1"
+    >
       <PastMatchesMatch v-for="game in pastGamesSortedByTimeEnded" :key="game.id" :game="game" />
     </div>
   </section>

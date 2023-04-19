@@ -1,5 +1,5 @@
 <template>
-  <div class="absolute bottom-20 right-20 text-[40px]">
+  <div class="text-[40px]">
     <div
       v-for="emoji in currentEmojis"
       :key="emoji.id"
@@ -57,7 +57,7 @@ defineExpose({
   }
 
   50% {
-    transform: translate(-100px, -200px);
+    transform: translate(-10vw, -19vh);
     scale: 1.5;
     rotate: 10deg;
   }
@@ -67,7 +67,7 @@ defineExpose({
   }
 
   100% {
-    transform: translate(-300px, -440px);
+    transform: translate(-33vw, -44vh);
     opacity: 0;
   }
 }

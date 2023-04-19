@@ -1,8 +1,8 @@
 <template>
-  <div class="container mx-auto px-4 text-base">
+  <div class="container mx-auto px-4 text-base md:text-sm sm:px-2">
     <div class="min-h-screen">
       <TheHeader />
-      <main class="mb-32"><slot></slot></main>
+      <main class="mb-16"><slot></slot></main>
     </div>
     <TheFooter class="mb-8" />
   </div>

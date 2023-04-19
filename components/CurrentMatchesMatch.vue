@@ -11,7 +11,7 @@
           ? 'cursor-pointer bg-slate-50  text-slate-500  group-hover:bg-slate-100 group-focus:bg-slate-100 group-active:bg-slate-200'
           : 'bg-slate-300 text-slate-900',
       ]"
-      class="flex aspect-video flex-col items-center justify-center gap-2 rounded-lg outline-none transition-colors"
+      class="flex aspect-video flex-col items-center justify-center gap-2 rounded-lg outline-none transition-colors sm:h-32 sm:w-full"
     >
       {{ props.game.players[0].name }}
       <span>{{ props.game.players.length }} / 2</span>

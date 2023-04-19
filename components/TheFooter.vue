@@ -1,12 +1,5 @@
 <template>
-  <footer class="flex items-start gap-10">
-    <div class="flex flex-col gap-5">
-      <span class="font-bold">{{ t('contributors.title') }}</span>
-      <ul class="flex flex-col gap-2">
-        <li>{{ t('contributors.NaboishikovArtemiy') }}</li>
-        <li>{{ t('contributors.YukinDmitry') }}</li>
-      </ul>
-    </div>
+  <footer class="flex flex-wrap items-start gap-x-10 gap-y-5">
     <VLink to="https://github.com/Artemiy111/rps">{{ t('projectOnGithub') }}</VLink>
     <span
       >{{ t('imageFrom') }}
@@ -21,26 +14,16 @@
 
 <script setup lang="ts">
 import VLink from '~/components/ui/VLink.vue'
-const { t, locale } = useI18n()
+const { t } = useI18n()
 </script>
 
 <i18n lang="json">
 {
   "ru": {
-    "contributors": {
-      "title": "Контрибьютеры",
-      "NaboishikovArtemiy": "Набойщиков Артемий",
-      "YukinDmitry": "Юкин Дмитрий"
-    },
     "projectOnGithub": "Проект на Github",
     "imageFrom": "Изображение от"
   },
   "en": {
-    "contributors": {
-      "title": "Contributors",
-      "NaboishikovArtemiy": "Naboishikov Artemiy",
-      "YukinDmitry": "Yukin Dmitry"
-    },
     "imageFrom": "Image from",
     "projectOnGithub": "Project on Github"
   }

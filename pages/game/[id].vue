@@ -1,7 +1,7 @@
 <template>
-  <div class="flex justify-between gap-24 md:gap-12 lg:gap-20">
-    <div class="flex w-fit flex-col gap-8">
-      <section class="flex w-fit min-w-[210px] flex-col gap-2">
+  <div class="flex justify-between gap-24 lg:gap-10 md:flex-col-reverse md:gap-4">
+    <section class="flex w-fit flex-col gap-8">
+      <section class="flex w-fit min-w-[210px] flex-col gap-2 md:min-w-[180px]">
         <h2 class="font-bold">{{ t('playing') }}</h2>
         <span>{{ player?.name }} / {{ enemy?.name || '..' }}</span>
       </section>
@@ -16,7 +16,7 @@
       <section class="custom-scroll flex max-h-[60dvh] w-fit flex-col gap-6 overflow-auto pr-2">
         <div v-for="round in rounds" :key="round.order" class="flex flex-col gap-2">
           <h4 class="font-bold">{{ t('round') }} {{ round.order }}</h4>
-          <div class="flex w-fit items-center gap-1 rounded-lg bg-slate-50 py-2 px-4">
+          <div class="flex w-fit items-center gap-1 rounded-lg bg-slate-50 px-4 py-2">
             <span :class="player!.id === round.winnerId ? 'text-blue-500' : ''">{{
               t(round.playerCard || 'hand')
             }}</span>
@@ -27,38 +27,42 @@
           </div>
         </div>
       </section>
-    </div>
-    <div class="flex flex-col items-center gap-8">
-      <GameCard :card-name="null" :is-selected="isEnemySelected" :is-selectable="false" />
-      <GameStatus :game-status="gameStatus" />
-      <div class="flex gap-10">
-        <GameCard
-          card-name="rock"
-          :is-selected="isCardSelected('rock')"
-          :is-selectable="isCardSelectable"
-          @select="selectCard"
-        />
-        <GameCard
-          card-name="scissors"
-          :is-selected="isCardSelected('scissors')"
-          :is-selectable="isCardSelectable"
-          @select="selectCard"
-        />
-        <GameCard
-          card-name="paper"
-          :is-selected="isCardSelected('paper')"
-          :is-selectable="isCardSelectable"
-          @select="selectCard"
-        />
-      </div>
-    </div>
+    </section>
+    <div
+      class="flex gap-24 lg:gap-10 md:gap-4 [@media(max-width:900px)]:flex-col [@media(max-width:900px)]:items-center"
+    >
+      <section class="flex flex-col items-center gap-8 md:gap-6 sm:gap-4">
+        <GameCard :card-name="null" :is-selected="isEnemySelected" :is-selectable="false" />
+        <GameStatus :game-status="gameStatus" />
+        <div class="flex gap-10 md:gap-8 sm:gap-6">
+          <GameCard
+            card-name="rock"
+            :is-selected="isCardSelected('rock')"
+            :is-selectable="isCardSelectable"
+            @select="selectCard"
+          />
+          <GameCard
+            card-name="scissors"
+            :is-selected="isCardSelected('scissors')"
+            :is-selectable="isCardSelectable"
+            @select="selectCard"
+          />
+          <GameCard
+            card-name="paper"
+            :is-selected="isCardSelected('paper')"
+            :is-selectable="isCardSelectable"
+            @select="selectCard"
+          />
+        </div>
+      </section>
 
-    <GameEmojiBar
-      class="transition-opacity"
-      :class="[gameStatus === 'end' ? ' opacity-0' : 'opacity-100']"
-      @select="sendMessage($event)"
-    />
-    <GameEmojiShow ref="gameEmojiShow" />
+      <GameEmojiBar
+        class="transition-opacity [@media(max-width:900px)]:flex-row"
+        :class="[gameStatus === 'end' ? ' opacity-0' : 'opacity-100']"
+        @select="sendMessage($event)"
+      />
+    </div>
+    <GameEmojiShow ref="gameEmojiShow" class="absolute bottom-20 right-20" />
   </div>
 </template>
 
@@ -185,7 +189,7 @@ const parseMessage = (event: MessageEvent): GameMessageFromApi => {
 
 onMounted(() => {
   console.log(config)
-  socket.value = new WebSocket(config.gameWsUrl)
+  socket.value = new WebSocket(config.public.gameWsUrl)
   socket.value.onopen = onSocketOpen
   socket.value.onmessage = onSocketMessage
   socket.value.onclose = onSocketClose

@@ -7,10 +7,13 @@
         ? 'cursor-pointer hover:text-slate-500 focus:text-slate-500 active:text-blue-500'
         : '',
     ]"
-    class="h-fit w-fit rounded-[30px] bg-slate-100 px-3 py-12 outline-none transition-colors lg:py-8 lg:px-2"
+    class="h-fit w-fit rounded-[2vmax] bg-slate-100 px-3 py-12 outline-none transition-colors lg:px-2 lg:py-8"
     @click="selectCard"
   >
-    <NuxtIcon :name="props.cardName || 'hand'" class="md:text[100px] text-[150px]" />
+    <NuxtIcon
+      :name="props.cardName || 'hand'"
+      class="text-[150px] lg:text-[120px] md:text-[100px] sm:text-[90px] xs:text-[68px]"
+    />
   </div>
 </template>
 

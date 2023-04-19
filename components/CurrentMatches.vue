@@ -1,7 +1,9 @@
 <template>
   <section class="">
     <h2 class="mb-8 font-bold">{{ t('currentMatches') }}</h2>
-    <div class="grid grid-cols-4 gap-5">
+    <div
+      class="grid grid-cols-4 gap-5 lg:grid-cols-3 md:grid-cols-2 [@media(max-width:500px)]:grid-cols-1"
+    >
       <CurrentMatchesMatchCreate />
 
       <CurrentMatchesMatch v-for="game in props.currentGames" :key="game.id" :game="game" />
